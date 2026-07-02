@@ -3,7 +3,7 @@ import { Draggable } from "react-beautiful-dnd";
 import { Button, Input } from "antd";
 import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import CardModal from "../CardModal";
-import "./styles.scss";
+
 
 export default function Card(props) {
   const [showModal, setShowModal] = useState(false);
@@ -70,8 +70,8 @@ export default function Card(props) {
       <Draggable draggableId={String(cardKey)} index={index}>
         {(provided) => (
           <>
-            <div
-              className="card-container"
+              <div
+              className="mb-3 rounded-md bg-dark-blue border border-border-ki cursor-pointer"
               {...provided.draggableProps}
               {...provided.dragHandleProps}
               ref={provided.innerRef}
@@ -79,7 +79,7 @@ export default function Card(props) {
               onMouseLeave={handleHideIcons}
               onBlur={handleDisableEditing}
             >
-              <div className="card-container__content">
+              <div className="relative font-medium px-4 py-3 text-pearl-white">
                 {editing ? (
                   <form
                     onSubmit={(event) =>
@@ -93,6 +93,7 @@ export default function Card(props) {
                     }
                   >
                     <Input
+                      className="bg-ki-black text-pearl-white border-border-ki"
                       value={cardTitle}
                       onChange={(event) => handleTitleChange(event)}
                       autoFocus
@@ -102,20 +103,20 @@ export default function Card(props) {
                   <div onClick={() => handleShowModal()}>
                     {showIcons && (
                       <div
-                        className="card-icons"
+                        className="absolute top-[7px] right-[8px] flex gap-1"
                         onClick={(event) => event.stopPropagation()}
                       >
                         <Button
                           onClick={handleEnableEditing}
                           icon={<EditOutlined />}
-                          style={{ fontSize: 8, border: "none" }}
+                          className="bg-transparent border-none text-light-gray hover:bg-ki-black hover:text-pearl-white flex items-center justify-center p-1"
                         ></Button>
                         <Button
                           onClick={() =>
                             onDeleteCard(handleDeleteCard, listKey, cardKey)
                           }
                           icon={<DeleteOutlined />}
-                          style={{ fontSize: 8, border: "none" }}
+                          className="bg-transparent border-none text-light-gray hover:bg-ki-black hover:text-pearl-white flex items-center justify-center p-1"
                         ></Button>
                       </div>
                     )}

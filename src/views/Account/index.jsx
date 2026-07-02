@@ -4,7 +4,6 @@ import { Input, Form, Button } from "antd";
 import { doPasswordUpdate } from "../../firebase/auth";
 import { useHistory } from "react-router-dom";
 import { LockOutlined } from "@ant-design/icons";
-import "./styles.scss";
 
 export default function Account() {
   const [user, setUser] = useState(null);
@@ -38,12 +37,12 @@ export default function Account() {
     }
   };
   return (
-    <div className="account-container">
-      <div className="account-details">
-        <h2>Account: {user && user.email}</h2>
-        <p>Want to reset your password?</p>
+    <div className="flex flex-col justify-center items-center h-full px-6 max-w-[400px] mx-auto w-full md:w-[400px]">
+      <div className="w-full text-pearl-white">
+        <h2 className="text-2xl font-bold mb-2 text-pearl-white">Account: {user && user.email}</h2>
+        <p className="text-light-gray mb-6">Want to reset your password?</p>
       </div>
-      <form className="account-form">
+      <form className="w-full">
         <Form.Item
           name="password"
           rules={[{ required: true, message: "Please input your password!" }]}
@@ -54,7 +53,8 @@ export default function Account() {
             value={password}
             placeholder="Enter a new password"
             onChange={(e) => setPassword(e.target.value)}
-            prefix={<LockOutlined style={{ color: "rgba(0,0,0,.25)" }} />}
+            prefix={<LockOutlined style={{ color: "rgba(255,255,255,.5)" }} />}
+            className="bg-ki-black border border-border-ki text-pearl-white rounded px-3 py-2"
           />
         </Form.Item>
         <Form.Item
@@ -67,11 +67,12 @@ export default function Account() {
             value={passwordTwo}
             placeholder="Confirm new password"
             onChange={(e) => setPasswordTwo(e.target.value)}
-            prefix={<LockOutlined style={{ color: "rgba(0,0,0,.25)" }} />}
+            prefix={<LockOutlined style={{ color: "rgba(255,255,255,.5)" }} />}
+            className="bg-ki-black border border-border-ki text-pearl-white rounded px-3 py-2"
           />
         </Form.Item>
         <Form.Item>
-          <Button type="primary" block onClick={(e) => handleOnSubmit(e)}>
+          <Button block onClick={(e) => handleOnSubmit(e)} className="bg-ki-purple border border-border-ki text-pearl-white hover:bg-ki-pastel hover:border-ki-pastel h-[40px] rounded transition-colors font-medium">
             Reset your password
           </Button>
         </Form.Item>

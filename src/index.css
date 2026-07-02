@@ -1,66 +1,129 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 @import "~antd/dist/antd.css";
 
-html,
-body {
-  margin: 0;
-  padding: 0;
-  color: rgb(60, 64, 82);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body {
+    @apply m-0 p-0 text-pearl-white bg-ki-black font-sans antialiased;
+  }
+  
+  * {
+    @apply box-border appearance-none no-underline;
+  }
+
+  code {
+    font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+  }
+
+  #root {
+    @apply h-screen min-h-screen flex flex-col;
+  }
 }
 
-* {
-  box-sizing: border-box;
-  appearance: none;
-  text-decoration: none;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
-}
-
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
-    monospace;
-}
-
-#root {
-  height: 100%;
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-/* width */
+/* Custom Scrollbar for dark mode */
 ::-webkit-scrollbar {
-  height: 9px;
-  width: 9px;
+  @apply h-2 w-2;
 }
 
-/* Track */
 ::-webkit-scrollbar-track {
-  border-radius: 3px;
-  background: rgba(215, 224, 234, 0.3);
-  /* margin: 0px 6px; */
+  @apply rounded-sm bg-ki-black-500;
 }
 
-/* Handle */
 ::-webkit-scrollbar-thumb {
-  background: rgba(215, 224, 234, 1);
-  border-radius: 16px;
-  height: 2px;
+  @apply bg-ki-blue-500 rounded-full h-[2px];
 }
 
-/* Handle on hover */
 ::-webkit-scrollbar-thumb:hover {
-  background: rgb(201, 209, 219);
+  @apply bg-ki-pastel;
 }
-
-/* ::-webkit-scrollbar-track-piece {
-  background: rgba(0, 0, 0, 0.15);
-} */
 
 ::-webkit-scrollbar-button {
-  display: block;
-  height: 4px;
-  width: 4px;
+  @apply block h-1 w-1;
+}
+
+/* =============================================
+   Ant Design – Dark Mode Global Overrides
+   ============================================= */
+
+/* Modal */
+.ant-modal-content,
+.ant-modal-header {
+  background-color: #1a1d2e !important;
+  border-color: #2d3147 !important;
+}
+.ant-modal-title {
+  color: #e8eaf0 !important;
+}
+.ant-modal-close-x {
+  color: #9aa0b8 !important;
+}
+.ant-modal-close:hover .ant-modal-close-x {
+  color: #e8eaf0 !important;
+}
+.ant-modal-body {
+  background-color: #1a1d2e !important;
+  color: #e8eaf0 !important;
+}
+
+/* Ant Input & TextArea dark */
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-input-password {
+  background-color: #0f1121 !important;
+  border-color: #2d3147 !important;
+  color: #e8eaf0 !important;
+}
+.ant-input::placeholder,
+.ant-input-affix-wrapper input::placeholder {
+  color: #9aa0b8 !important;
+}
+.ant-input-affix-wrapper:hover,
+.ant-input:hover {
+  border-color: #7c6dd8 !important;
+}
+.ant-input-affix-wrapper:focus-within,
+.ant-input:focus,
+.ant-input-focused {
+  border-color: #7c6dd8 !important;
+  box-shadow: 0 0 0 2px rgba(124, 109, 216, 0.2) !important;
+}
+
+/* Ant Dropdown Menu dark */
+.ant-dropdown-menu {
+  background-color: #0f1121 !important;
+  border: 1px solid #2d3147 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4) !important;
+}
+.ant-dropdown-menu-item {
+  color: #e8eaf0 !important;
+  border-radius: 8px !important;
+}
+.ant-dropdown-menu-item:hover {
+  background-color: rgba(124, 109, 216, 0.2) !important;
+  color: #e8eaf0 !important;
+}
+
+/* Ant Button default in dark areas */
+.ant-btn-default {
+  background-color: transparent !important;
+  border-color: #2d3147 !important;
+  color: #9aa0b8 !important;
+}
+.ant-btn-default:hover {
+  border-color: #7c6dd8 !important;
+  color: #e8eaf0 !important;
+}
+
+/* Form item label */
+.ant-form-item-label > label {
+  color: #e8eaf0 !important;
+}
+
+/* Validation message */
+.ant-form-item-explain-error {
+  color: #e05f5f !important;
 }

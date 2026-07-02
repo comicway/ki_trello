@@ -1,9 +1,8 @@
 import { Button } from "antd";
-import "./styles.scss";
 
 export default function CreateBoardCard(props) {
   return (
-    <Button className="create-board-card" onClick={props.onClick}>
+    <Button className="bg-dark-blue border border-border-ki rounded-md text-pearl-white font-medium hover:bg-ki-black hover:text-ki-orange w-full h-24" onClick={props.onClick}>
       Create a new board...
     </Button>
   );
