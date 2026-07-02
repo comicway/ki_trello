@@ -7,18 +7,17 @@ import {
   UserOutlined,
   LogoutOutlined,
 } from "@ant-design/icons";
-import "./styles.scss";
 
 export default function Nav() {
   const menu = (
-    <Menu>
-      <Menu.Item>
-        <Link to="/account">
+    <Menu className="bg-ki-black border border-border-ki text-pearl-white rounded-md">
+      <Menu.Item className="hover:bg-alert-danger hover:text-pearl-white rounded">
+        <Link to="/account" className="text-pearl-white hover:text-pearl-white flex items-center gap-2">
           <UserOutlined />
           Account
         </Link>
       </Menu.Item>
-      <Menu.Item onClick={auth.doSignOut}>
+      <Menu.Item onClick={auth.doSignOut} className="hover:bg-alert-danger hover:text-pearl-white rounded flex items-center gap-2 text-pearl-white">
         <LogoutOutlined />
         Sign out
       </Menu.Item>
@@ -27,15 +26,15 @@ export default function Nav() {
 
   return (
     <>
-      <nav className="nav">
-        <div className="nav__home">
+      <nav className="flex justify-between items-center px-4 py-3 border-b border-border-ki bg-ki-black">
+        <div>
           <Link to="/boards">
             <Button
               size="large"
+              className="bg-transparent border-border-ki text-pearl-white hover:bg-transparent hover:bg-transparent hover:border-ki-orange hover:text-ki-orange transition-colors flex items-center justify-center"
               icon={
                 <HomeOutlined
                   style={{
-                    color: "rgba(60, 64, 82, 0.8)",
                     fontSize: "1.25rem",
                   }}
                 />
@@ -43,22 +42,21 @@ export default function Nav() {
             />
           </Link>
         </div>
-        <div className="nav__settings">
+        <div>
           <Space direction="vertical">
             <Space wrap>
               <Dropdown
                 overlay={menu}
                 trigger={["click"]}
                 placement="bottomRight"
-                style={{ backgroundColor: "red" }}
               >
                 <Button
                   size="large"
+                  className="bg-transparent border-border-ki text-pearl-white hover:bg-transparent hover:border-ki-orange hover:text-ki-orange transition-colors flex items-center justify-center"
                   style={{ paddingTop: "6px" }}
                   icon={
                     <SettingOutlined
                       style={{
-                        color: "rgba(60, 64, 82, 0.8)",
                         fontSize: "1.25rem",
                       }}
                     />

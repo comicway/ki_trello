@@ -7,7 +7,6 @@ import List from "../../components/List";
 import CreateList from "../../components/CreateList";
 import Loader from "../../components/Loader";
 import BoardTitle from "../../components/BoardTitle";
-import "./styles.scss";
 
 export default function Board() {
   const [lists, setLists] = useState([]);
@@ -281,7 +280,7 @@ export default function Board() {
       {loading ? (
         <Loader />
       ) : (
-        <>
+        <div className="flex flex-col h-full bg-dark-blue">
           <BoardTitle
             title={board.title}
             boardKey={boardKey}
@@ -289,7 +288,7 @@ export default function Board() {
             deleteBoard={handleDeleteBoard}
           />
           <DragDropContext onDragEnd={handleOnDragEnd}>
-            <div className="board-wrapper">
+            <div className="flex-1 overflow-auto whitespace-nowrap mb-2 pl-2 pr-1 flex">
               <Droppable
                 droppableId="all-lists"
                 direction="horizontal"
@@ -297,7 +296,7 @@ export default function Board() {
               >
                 {(provided) => (
                   <div
-                    className="lists-container"
+                    className="mt-1 flex"
                     {...provided.droppableProps}
                     ref={provided.innerRef}
                   >
@@ -307,9 +306,8 @@ export default function Board() {
                       );
 
                       return (
-                        <>
+                        <div key={list.key} className="inline-block h-full">
                           <List
-                            key={list.key}
                             listKey={list.key}
                             listTitle={list.title}
                             cards={listCards}
@@ -323,7 +321,7 @@ export default function Board() {
                             handleUpdateList={handleUpdateList}
                             handleDeleteList={handleDeleteList}
                           />
-                        </>
+                        </div>
                       );
                     })}
 
@@ -331,10 +329,12 @@ export default function Board() {
                   </div>
                 )}
               </Droppable>
-              <CreateList handleCreateList={handleCreateList} />
+              <div className="mt-1 h-full">
+                <CreateList handleCreateList={handleCreateList} />
+              </div>
             </div>
           </DragDropContext>
-        </>
+        </div>
       )}
     </>
   );
