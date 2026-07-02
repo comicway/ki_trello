@@ -7,7 +7,6 @@ import CreateBoardModal from "../../components/CreateBoardModal";
 import CreateBoardCard from "../../components/CreateBoardCard";
 import Loader from "../../components/Loader";
 
-import "./styles.scss";
 
 function Boards(props) {
   const [modalOpen, setModalOpen] = useState(false);
@@ -55,24 +54,29 @@ function Boards(props) {
       {loading ? (
         <Loader />
       ) : (
-        <div className="boards-view-container">
-          <div className="boards-container">
+        <div className="h-full">
+          <div className="flex flex-col items-center justify-center relative py-6 px-4 md:grid md:grid-cols-1 lg:grid-cols-3 md:gap-3 md:w-auto md:max-w-4xl md:mx-auto">
             {boards.map((board, index) => {
               return (
-                <>
+                <div key={index}>
                   <Link
                     index={index}
                     to={{
                       pathname: `b/${board.key}`,
                       state: { boardKey: board.key },
                     }}
+                    className="w-full mb-6 md:m-0 block"
                   >
-                    <Button className="board-card">{board.title}</Button>
+                    <Button className="h-[120px] w-full md:h-[188px] md:w-[280px] px-4 py-3 bg-dark-blue rounded-md text-base text-pearl-white font-medium overflow-hidden whitespace-normal border border-border-ki hover:bg-ki-black hover:text-ki-orange transition-colors">
+                      <span className="block break-words hyphens-auto">{board.title}</span>
+                    </Button>
                   </Link>
-                </>
+                </div>
               );
             })}
-            <CreateBoardCard onClick={() => handleModalOpen()} />
+            <div className="w-full md:w-[280px] md:h-[188px]">
+              <CreateBoardCard onClick={() => handleModalOpen()} />
+            </div>
           </div>
 
           <CreateBoardModal

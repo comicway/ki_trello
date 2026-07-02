@@ -5,7 +5,6 @@ import { db } from "../../firebase";
 import CreateCard from "../CreateCard";
 import ListHeader from "./ListHeader";
 import Card from "../Card";
-import "./styles.scss";
 
 export default function List(props) {
   const [creatingCard, setCreatingCard] = useState(false);
@@ -46,7 +45,7 @@ export default function List(props) {
     <Draggable key={listKey} draggableId={String(listKey)} index={index}>
       {(provided) => (
         <div
-          className="list-container"
+          className="w-[292px] mx-1 py-4 box-border inline-block align-top whitespace-nowrap bg-ki-black border border-border-ki rounded-md"
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           ref={provided.innerRef}
@@ -57,8 +56,8 @@ export default function List(props) {
             handleUpdateList={handleUpdateList}
             handleDeleteList={handleDeleteList}
           />
-          <div className="list-container__content">
-            <div className="list-container__content__cards">
+          <div className="rounded box-border flex flex-col max-h-full relative whitespace-normal">
+            <div className="px-4 flex-auto mb-0 overflow-y-auto overflow-x-hidden z-[1] min-h-0">
               <Droppable droppableId={String(listKey)} type="card">
                 {(provided) => (
                   <div {...provided.droppableProps} ref={provided.innerRef}>

@@ -52,11 +52,9 @@ export default function CardModal(props) {
   return (
     <Modal
       title={
-        <div>
-          <h4 style={{ margin: 0 }}>
-            <ProjectOutlined style={{ marginRight: "8px" }} />
-            <span>{cardTitle}</span>
-          </h4>
+        <div className="flex items-center gap-2 text-pearl-white">
+          <ProjectOutlined />
+          <span className="font-semibold text-base">{cardTitle}</span>
         </div>
       }
       visible={visible}
@@ -65,78 +63,80 @@ export default function CardModal(props) {
         handleDisableEditing();
       }}
       footer={null}
+      className="dark-modal"
     >
-      <div className="labels-container" style={{ marginBottom: "24px" }}>
-        <h4>
-          <TagOutlined style={{ marginRight: "8px" }} />
+      {/* Labels */}
+      <div className="mb-6">
+        <h4 className="flex items-center gap-2 text-pearl-white font-semibold mb-3">
+          <TagOutlined />
           <span>Labels</span>
         </h4>
-        <div className="labels-selection">
-          <Button type="primary" style={{ marginRight: "4px" }}>
+        <div className="flex gap-2">
+          <button className="px-3 py-1 rounded text-xs font-semibold bg-green-700 text-pearl-white hover:bg-green-600 transition-colors">
             Low
-          </Button>
-          <Button
-            type="primary"
-            style={{
-              marginRight: "4px",
-              backgroundColor: "#ebc36a",
-              borderColor: "#ebc36a",
-            }}
-          >
+          </button>
+          <button className="px-3 py-1 rounded text-xs font-semibold text-pearl-white transition-colors" style={{ backgroundColor: "#ebc36a" }}>
             Medium
-          </Button>
-          <Button
-            type="primary"
-            style={{ marginRight: "4px" }}
-            style={{
-              marginRight: "4px",
-              backgroundColor: "#c74235",
-              borderColor: "#c74235",
-            }}
-          >
+          </button>
+          <button className="px-3 py-1 rounded text-xs font-semibold text-pearl-white transition-colors" style={{ backgroundColor: "#c74235" }}>
             High
-          </Button>
+          </button>
         </div>
       </div>
-      <div className="description-container">
-        <h4>
-          <AlignLeftOutlined style={{ marginRight: "8px" }} />{" "}
+
+      {/* Description */}
+      <div>
+        <h4 className="flex items-center gap-2 text-pearl-white font-semibold mb-3">
+          <AlignLeftOutlined />
           <span>Description</span>
         </h4>
-        <div className="description-content">
+        <div>
           {editing ? (
-            <>
-              <form
-                onSubmit={(event) =>
-                  handleSubmitForm(event, handleEditCard, listKey, cardKey)
+            <form
+              onSubmit={(event) =>
+                handleSubmitForm(event, handleEditCard, listKey, cardKey)
+              }
+            >
+              <TextArea
+                value={description}
+                onChange={(e) => handleInputChange(e)}
+                placeholder={
+                  description === ""
+                    ? "Add a more detailed description..."
+                    : description
                 }
-              >
-                <TextArea
-                  value={description}
-                  onChange={(e) => handleInputChange(e)}
-                  placeholder={
-                    description === ""
-                      ? "Add a more detailed description..."
-                      : description
-                  }
-                  autoFocus
-                />
-                <Button
+                autoFocus
+                className="bg-ki-black text-pearl-white border-border-ki rounded mb-3 resize-none"
+                rows={4}
+              />
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className="px-4 py-1.5 bg-ki-purple border border-border-ki text-pearl-white rounded text-sm font-medium hover:bg-ki-pastel transition-colors"
                   onClick={(event) =>
                     handleSubmitForm(event, handleEditCard, listKey, cardKey)
                   }
                 >
                   Save
-                </Button>
-                <Button onClick={handleDisableEditing}>Cancel</Button>
-              </form>
-            </>
+                </button>
+                <button
+                  type="button"
+                  className="px-4 py-1.5 bg-transparent border border-border-ki text-light-gray rounded text-sm font-medium hover:border-alert-danger hover:text-alert-danger transition-colors"
+                  onClick={handleDisableEditing}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
           ) : (
-            <div onClick={handleEnableEditing}>
+            <div
+              onClick={handleEnableEditing}
+              className="bg-ki-black border border-border-ki rounded px-4 py-3 text-light-gray cursor-pointer hover:border-ki-purple transition-colors min-h-[60px]"
+            >
               {cardDescription ? (
-                <span>{cardDescription}</span>
+                <span className="text-pearl-white">{cardDescription}</span>
               ) : (
-                <span>Add a more detailed description...</span>
+                <span className="italic text-light-gray text-sm">Add a more detailed description...</span>
               )}
             </div>
           )}

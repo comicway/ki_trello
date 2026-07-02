@@ -34,15 +34,15 @@ export default function ListHeader(props) {
   };
 
   const menu = (
-    <Menu>
-      <Menu.Item onClick={() => handleDeleteList(listKey)}>
+    <Menu className="bg-ki-black border border-border-ki text-pearl-white rounded-md">
+      <Menu.Item onClick={() => handleDeleteList(listKey)} className="hover:bg-alert-danger hover:text-pearl-white rounded">
         Delete this list
       </Menu.Item>
     </Menu>
   );
 
   return (
-    <div className="list-container__content__header">
+    <div className="flex items-center justify-between text-lg mb-3 px-4 whitespace-normal">
       {editing ? (
         <form
           onSubmit={(event) =>
@@ -57,14 +57,14 @@ export default function ListHeader(props) {
             value={listHeader}
             onChange={(e) => handleInputChange(e)}
             autoFocus
+            className="text-lg px-2 rounded bg-dark-blue text-pearl-white border-border-ki"
           />
         </form>
       ) : (
         <>
           <div
-            className="list-title"
+            className="max-w-[200px] overflow-hidden block text-ellipsis text-pearl-white cursor-pointer font-medium"
             onClick={() => handleEnableEdit()}
-            style={{ cursor: "pointer" }}
           >
             {title}
           </div>
@@ -76,17 +76,15 @@ export default function ListHeader(props) {
             overlay={menu}
             trigger={["click"]}
             placement="bottomRight"
-            style={{ backgroundColor: "red" }}
           >
             <Button
               shape="circle"
-              style={{ border: "none", boxShadow: "none" }}
               icon={
                 <MoreOutlined
                   style={{ transform: "rotate(90deg)", fontSize: 22 }}
                 />
               }
-              className="list-menu"
+              className="text-[18px] pr-[2px] bg-transparent border-none shadow-none text-light-gray hover:bg-dark-blue hover:text-pearl-white flex items-center justify-center"
             />
           </Dropdown>
         </Space>
