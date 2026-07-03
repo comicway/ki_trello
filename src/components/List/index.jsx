@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Droppable, Draggable } from "react-beautiful-dnd";
-import { mergeDataWithKey } from "../../utils";
 import { db } from "../../firebase";
 import CreateCard from "../CreateCard";
 import ListHeader from "./ListHeader";
@@ -14,6 +13,7 @@ export default function List(props) {
     setCards,
     listTitle,
     listKey,
+    boardKey,
     handleCreateCard,
     handleEditCard,
     handleDeleteCard,
@@ -23,19 +23,17 @@ export default function List(props) {
   } = props;
 
   useEffect(() => {
-    db.onceGetCard(listKey).then((snapshot) => {
-      const snapshotVal = snapshot.val();
-      if (snapshotVal) {
+    if (!boardKey || !listKey) return;
+    db.onceGetCard(boardKey, listKey).then((cardArray) => {
+      if (cardArray && cardArray.length > 0) {
         const data = {
           listKey,
-          cards: mergeDataWithKey(snapshotVal).sort(
-            (a, b) => a.index - b.index
-          ),
+          cards: cardArray,
         };
         setCards(data);
       }
     });
-  }, []);
+  }, [boardKey, listKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCreatingCard = () => {
     setCreatingCard(!creatingCard);

@@ -1,14 +1,8 @@
+import firebase from "firebase/app";
 import { auth } from "./firebase";
 
-export const doCreateUserWithEmailAndPassword = (email, password) =>
-  auth.createUserWithEmailAndPassword(email, password);
+const googleProvider = new firebase.auth.GoogleAuthProvider();
 
-export const doSignInWithEmailAndPassword = (email, password) =>
-  auth.signInWithEmailAndPassword(email, password);
+export const doSignInWithGoogle = () => auth.signInWithPopup(googleProvider);
 
 export const doSignOut = () => auth.signOut();
-
-export const doPasswordReset = (email) => auth.sendPasswordResetEmail(email);
-
-export const doPasswordUpdate = (password) =>
-  auth.currentUser.updatePassword(password);

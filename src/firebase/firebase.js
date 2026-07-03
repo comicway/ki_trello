@@ -1,16 +1,14 @@
 import firebase from "firebase/app";
 import "firebase/auth";
-import "firebase/database";
+import "firebase/firestore";
 
 var config = {
-  apiKey: "AIzaSyDAQtgANL13sJGwONLs3H-BB_aOI3DCIpY",
-  authDomain: "react-trello-clone-42c7f.firebaseapp.com",
-  projectId: "react-trello-clone-42c7f",
-  storageBucket: "react-trello-clone-42c7f.appspot.com",
-  messagingSenderId: "652768543378",
-  appId: "1:652768543378:web:56a191aca122cf4e495c4b",
-  databaseURL:
-    "https://react-trello-clone-42c7f-default-rtdb.europe-west1.firebasedatabase.app/",
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID,
 };
 
 if (!firebase.apps.length) {
@@ -18,6 +16,7 @@ if (!firebase.apps.length) {
 }
 
 const auth = firebase.auth();
-const db = firebase.database();
+const db = firebase.firestore();
 
-export { auth, db };
+export { auth, db, firebase };
+
