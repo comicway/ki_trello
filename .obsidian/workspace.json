@@ -185,17 +185,18 @@
   },
   "active": "c6da6a6bca118b8b",
   "lastOpenFiles": [
-    "build/asset-manifest.json",
+    "build/static/js/main.945e0198.js.map",
+    "build/static/js/main.945e0198.js.LICENSE.txt",
+    "build/static/js/main.945e0198.js",
+    "src/views/SignUp/index.jsx",
+    "src/views/SignUp",
     "build/static/js/main.7f3e9106.js.map",
     "build/static/js/main.7f3e9106.js.LICENSE.txt",
     "build/static/js/main.7f3e9106.js",
+    "build/asset-manifest.json",
     "build/static/js/422.c3061ffc.chunk.js.map",
     "build/static/js/422.c3061ffc.chunk.js",
-    "build/static/css/main.a824a9d4.css.map",
-    "build/static/css/main.a824a9d4.css",
-    "build/static/js",
-    "build/static/css",
-    "build/static",
+    "docs/Roudmap.md",
     "node_modules/tailwindcss/README.md",
     "node_modules/tailwindcss/src/postcss-plugins/nesting/README.md",
     "node_modules/tailwindcss/src/value-parser/README.md",
@@ -208,7 +209,6 @@
     "node_modules/react-scripts/node_modules/tailwindcss/src/value-parser/README.md",
     "node_modules/react-scripts/node_modules/tailwindcss/lib/postcss-plugins/nesting/README.md",
     "node_modules/react-scripts/node_modules/tailwindcss/lib/value-parser/README.md",
-    "node_modules/react-scripts/node_modules/lilconfig/readme.md",
-    "docs/Roudmap.md"
+    "node_modules/react-scripts/node_modules/lilconfig/readme.md"
   ]
 }

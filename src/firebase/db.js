@@ -1,196 +1,226 @@
 import { db } from "./firebase";
 import { getUser } from "./user";
 
-const boardsRef = db.ref("boards");
-const listsRef = db.ref("lists");
-const cardsRef = db.ref("cards");
-
-export const doCreateUser = (id, username, email) =>
-  db.ref(`users/${id}`).set({
-    username,
-    email,
-  });
-
-export const onceGetUsers = () => db.ref("users").once("value");
+// ─── BOARDS ──────────────────────────────────────────────────────────────────
 
 export const doCreateBoard = async (board) => {
   const uid = getUser().uid;
-  const id = boardsRef.push().key;
-  await boardsRef.child(uid).child(id).set(board);
-  board.key = id;
-  return board;
+  const ref = await db
+    .collection("users")
+    .doc(uid)
+    .collection("boards")
+    .add(board);
+  return { ...board, key: ref.id };
 };
 
 export const doDeleteBoard = async (boardKey) => {
   const uid = getUser().uid;
-  await boardsRef.child(uid).child(boardKey).remove();
+  const listsSnap = await db
+    .collection("users")
+    .doc(uid)
+    .collection("boards")
+    .doc(boardKey)
+    .collection("lists")
+    .get();
+
+  const deletions = [];
+  listsSnap.forEach((listDoc) => {
+    deletions.push(doDeleteList(boardKey, listDoc.id));
+  });
+  await Promise.all(deletions);
+
+  return db.collection("users").doc(uid).collection("boards").doc(boardKey).delete();
 };
 
-export const doUpdateBoard = async (boardKey, title) => {
+export const doUpdateBoard = async (boardKey, data) => {
   const uid = getUser().uid;
-  await boardsRef
-    .child(uid)
-    .child(boardKey)
-    .update({
-      ...title,
-    });
+  await db
+    .collection("users")
+    .doc(uid)
+    .collection("boards")
+    .doc(boardKey)
+    .update(data);
 };
 
-export const onceGetBoards = () => {
+export const onceGetBoards = async () => {
   const uid = getUser().uid;
-  return boardsRef.child(uid).once("value");
+  const snap = await db.collection("users").doc(uid).collection("boards").get();
+  const boards = [];
+  snap.forEach((doc) => boards.push({ key: doc.id, ...doc.data() }));
+  return boards;
 };
 
-export const doEditBoard = async (boardKey, board) => {
+export const onceGetBoard = async (boardKey) => {
   const uid = getUser().uid;
-
-  await boardsRef
-    .child(uid)
-    .child(boardKey)
-    .update({
-      ...board,
-    });
-  return board;
+  const snap = await db
+    .collection("users")
+    .doc(uid)
+    .collection("boards")
+    .doc(boardKey)
+    .get();
+  return snap.exists ? { key: snap.id, ...snap.data() } : null;
 };
 
-export const onceGetBoard = (boardKey) => {
-  const uid = getUser().uid;
+// ─── LISTS ───────────────────────────────────────────────────────────────────
 
-  return boardsRef.child(uid).child(`${boardKey}`).once("value");
+export const onceGetLists = async (boardKey) => {
+  const uid = getUser().uid;
+  const snap = await db
+    .collection("users")
+    .doc(uid)
+    .collection("boards")
+    .doc(boardKey)
+    .collection("lists")
+    .orderBy("index")
+    .get();
+  const lists = [];
+  snap.forEach((doc) => lists.push({ key: doc.id, ...doc.data() }));
+  return lists;
+};
+
+export const doCreateList = async (boardKey, list) => {
+  const uid = getUser().uid;
+  const listsRef = db
+    .collection("users")
+    .doc(uid)
+    .collection("boards")
+    .doc(boardKey)
+    .collection("lists");
+
+  const snap = await listsRef.get();
+  const index = snap.size;
+
+  const ref = await listsRef.add({ ...list, index });
+  return { ...list, key: ref.id, index };
+};
+
+export const doDeleteList = async (boardKey, listKey) => {
+  const uid = getUser().uid;
+  const cardsSnap = await db
+    .collection("users")
+    .doc(uid)
+    .collection("boards")
+    .doc(boardKey)
+    .collection("lists")
+    .doc(listKey)
+    .collection("cards")
+    .get();
+
+  const batch = db.batch();
+  cardsSnap.forEach((doc) => batch.delete(doc.ref));
+  batch.delete(
+    db
+      .collection("users")
+      .doc(uid)
+      .collection("boards")
+      .doc(boardKey)
+      .collection("lists")
+      .doc(listKey)
+  );
+  return batch.commit();
+};
+
+export const doUpdateList = async (boardKey, listKey, data) => {
+  const uid = getUser().uid;
+  await db
+    .collection("users")
+    .doc(uid)
+    .collection("boards")
+    .doc(boardKey)
+    .collection("lists")
+    .doc(listKey)
+    .update(data);
+  return data;
 };
 
 export const onListMove = async (params) => {
   const { boardKey, lists } = params;
-  console.log(lists);
-  var updates = {};
-
+  const uid = getUser().uid;
+  const batch = db.batch();
   lists.forEach((list, index) => {
-    console.log(listsRef);
-    const newList = { ...list, index };
-    updates[list.key] = newList;
+    const ref = db
+      .collection("users")
+      .doc(uid)
+      .collection("boards")
+      .doc(boardKey)
+      .collection("lists")
+      .doc(list.key);
+    batch.update(ref, { index });
   });
-
-  listsRef.child(boardKey).update(updates);
+  return batch.commit();
 };
 
-export const onceGetLists = (key) => listsRef.child(key).once("value");
+// ─── CARDS ───────────────────────────────────────────────────────────────────
 
-export const doCreateList = async (boardKey, list) => {
-  let listIndex;
-  // Get amount of lists to determine new list index
-  listsRef
-    .child(boardKey)
-    .once("value")
-    .then((snapshot) => {
-      const listsObject = snapshot.val();
-      listIndex = Object.keys(listsObject).length;
-    });
-
-  const id = listsRef.push().key;
-  await listsRef.child(boardKey).child(id).set(list);
-  list.key = id;
-  list.index = listIndex - 1;
-  return list;
+const cardsColRef = (boardKey, listKey) => {
+  const uid = getUser().uid;
+  return db
+    .collection("users")
+    .doc(uid)
+    .collection("boards")
+    .doc(boardKey)
+    .collection("lists")
+    .doc(listKey)
+    .collection("cards");
 };
 
-export const doDeleteList = (boardKey, listKey) =>
-  db
-    .ref(`lists/${boardKey}`)
-    .child(`${listKey}`)
-    .remove()
-    .then(() => db.ref("cards/").child(`${listKey}`).remove());
-
-export const doUpdateList = async (boardKey, listKey, list) => {
-  await listsRef
-    .child(boardKey)
-    .child(listKey)
-    .update({
-      ...list,
-    });
-  return list;
+export const onceGetCard = async (boardKey, listKey) => {
+  const snap = await cardsColRef(boardKey, listKey).orderBy("index").get();
+  const cards = [];
+  snap.forEach((doc) => cards.push({ key: doc.id, ...doc.data() }));
+  return cards;
 };
 
-export const doAddCard = async (listKey, cardTitle) => {
-  let cardIndex;
-  // Get amount of lists to determine new list index
-  await db
-    .ref(`cards/${listKey}`)
-    .once("value")
-    .then((snapshot) => {
-      const cardsObject = snapshot.val();
-      if (cardsObject !== undefined && cardsObject !== null) {
-        cardIndex = Object.keys(cardsObject).length;
-      } else cardIndex = 0;
-    });
-
-  db.ref(`cards/${listKey}`).push({
-    title: cardTitle,
-    index: cardIndex,
-  });
+export const doAddCard = async (boardKey, listKey, cardTitle) => {
+  const ref = cardsColRef(boardKey, listKey);
+  const snap = await ref.get();
+  const index = snap.size;
+  const docRef = await ref.add({ title: cardTitle, index });
+  return { key: docRef.id, title: cardTitle, index };
 };
 
-export const onceGetCard = (listKey) =>
-  db.ref(`cards/${listKey}`).once("value");
+export const doEditCard = async (boardKey, listKey, cardKey, card) => {
+  await cardsColRef(boardKey, listKey).doc(cardKey).update(card);
+  return { ...card, key: cardKey };
+};
 
-export const doEditCard = async (listKey, cardKey, card) => {
-  await cardsRef
-    .child(listKey)
-    .child(cardKey)
-    .update({
-      ...card,
-    });
-  card.key = cardKey;
-  return card;
+export const doDeleteCard = async (boardKey, listKey, cardKey) => {
+  return cardsColRef(boardKey, listKey).doc(cardKey).delete();
 };
 
 export const doMoveCard = async (params) => {
-  const { oldListKey, newListKey, cardKey, newIndex, cards } = params;
+  const { boardKey, oldListKey, newListKey, cardKey, cards } = params;
+  const uid = getUser().uid;
+  const batch = db.batch();
 
-  // we copy the card details
-  // we remove it from the old list
-  // and we insert it in the new list
+  const oldCardRef = db
+    .collection("users")
+    .doc(uid)
+    .collection("boards")
+    .doc(boardKey)
+    .collection("lists")
+    .doc(oldListKey)
+    .collection("cards")
+    .doc(cardKey);
 
-  // If its same list
-  // Change
+  const oldCardSnap = await oldCardRef.get();
+  const cardData = oldCardSnap.data();
 
-  let card;
-  await db
-    .ref(`cards/${oldListKey}`)
-    .child(`${cardKey}`)
-    .once("value")
-    .then((snapshot) => {
-      card = snapshot.val();
-    });
+  batch.delete(oldCardRef);
 
-  var updates = {};
-
+  const newListCardsRef = cardsColRef(boardKey, newListKey);
   cards.forEach((card, index) => {
-    const newCard = { ...card, index };
-    updates[card.key] = newCard;
+    const ref =
+      card.key === cardKey
+        ? newListCardsRef.doc(cardKey)
+        : newListCardsRef.doc(card.key);
+    batch.set(
+      ref,
+      { ...(card.key === cardKey ? cardData : card), index },
+      { merge: true }
+    );
   });
 
-  db.ref(`cards/${oldListKey}`)
-    .child(`${cardKey}`)
-    .remove()
-    .then(() => {
-      // remove the card from old list
-      // and update all cards on new list
-
-      db.ref(`cards/${newListKey}`).update(updates);
-      // console.log("editing ");
-    });
-
-  return onceGetCard(newListKey);
-
-  // db.ref(`cards/${oldListKey}`)
-  //   .child(`${cardKey}`)
-  //   .remove()
-  //   .then(() =>
-  //     db.ref(`cards/${newListKey}/${cardKey}`).set({
-  //       ...card,
-  //     })
-  //   );
+  await batch.commit();
+  return onceGetCard(boardKey, newListKey);
 };
-
-export const doDeleteCard = (listKey, cardKey) =>
-  db.ref(`cards/${listKey}/`).child(`${cardKey}`).remove();

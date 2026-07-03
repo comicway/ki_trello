@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { mergeDataWithKey } from "../../utils";
 import { db } from "../../firebase";
 import { Link } from "react-router-dom";
 import { Button } from "antd";
@@ -17,12 +16,8 @@ function Boards(props) {
   useEffect(() => {
     setLoading(true);
     db.onceGetBoards()
-      .then((snapshot) => {
-        if (!snapshot.val()) {
-          setLoading(false);
-          return;
-        }
-        setBoards(mergeDataWithKey(snapshot.val()));
+      .then((boards) => {
+        setBoards(boards);
         setLoading(false);
       })
       .catch((err) => {
@@ -30,6 +25,7 @@ function Boards(props) {
         console.error(err);
       });
   }, []);
+
 
   const handleCreateBoard = (board) => {
     db.doCreateBoard(board).then((response) => {

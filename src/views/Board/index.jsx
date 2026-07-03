@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { DragDropContext, Droppable } from "react-beautiful-dnd";
-import { getBoardKey, mergeDataWithKey } from "../../utils/index";
+import { getBoardKey } from "../../utils/index";
 import { useHistory } from "react-router-dom";
 import { db } from "../../firebase";
 import List from "../../components/List";
@@ -11,7 +11,7 @@ import BoardTitle from "../../components/BoardTitle";
 export default function Board() {
   const [lists, setLists] = useState([]);
   const [cards, setCards] = useState([]);
-  const [board, setBoard] = useState([]);
+  const [board, setBoard] = useState({});
   const [boardKey, setBoardKey] = useState("");
   const [loading, setLoading] = useState(false);
   const [dataFetched, setDataFetched] = useState(false);
@@ -19,14 +19,12 @@ export default function Board() {
 
   useEffect(() => {
     setLoading(true);
-    const boardKey = getBoardKey();
-    Promise.all([db.onceGetBoard(boardKey), db.onceGetLists(boardKey)])
-      .then((snapshots) => {
-        const board = snapshots[0].val();
-        const lists = mergeDataWithKey(snapshots[1].val());
-        setLists(lists.sort((a, b) => a.index - b.index));
-        setBoard(board);
-        setBoardKey(boardKey);
+    const bKey = getBoardKey();
+    Promise.all([db.onceGetBoard(bKey), db.onceGetLists(bKey)])
+      .then(([board, lists]) => {
+        setLists(lists); // already sorted by index from Firestore query
+        setBoard(board || {});
+        setBoardKey(bKey);
         setLoading(false);
         setDataFetched(true);
       })
@@ -39,8 +37,7 @@ export default function Board() {
 
   useEffect(() => {
     if (dataFetched) {
-      console.log("log one time");
-      console.log(cards);
+      console.log("Board data fetched");
     }
   }, [dataFetched]);
 
@@ -52,12 +49,8 @@ export default function Board() {
     db.doCreateList(boardKey, { title: listTitle }).then((res) => {
       const copiedLists = [...lists];
       const copiedCards = [...cards];
-      copiedCards.push({
-        listKey: res.key,
-        cards: [],
-      });
+      copiedCards.push({ listKey: res.key, cards: [] });
       copiedLists.push(res);
-      console.log(res);
       setLists(copiedLists);
       setCards(copiedCards);
     });
@@ -65,49 +58,31 @@ export default function Board() {
 
   const handleCreateCard = (params) => {
     const { listKey, cardTitle } = params;
-    db.doAddCard(listKey, cardTitle)
-      .then(() => db.onceGetCard(listKey))
-      .then((snapshot) => {
-        const snapshotVal = snapshot.val();
-        if (snapshotVal) {
-          // get back the cards
-          // and update the list
-          const newCards = mergeDataWithKey(snapshotVal);
-          const cardsClone = [...cards];
-          let cardsIndex = cardsClone.findIndex(
-            (cards) => cards.listKey === listKey
-          );
-
-          if (cardsIndex !== -1) {
-            cardsClone[cardsIndex] = {
-              ...cardsClone[cardsIndex],
-              cards: newCards,
-            };
-          } else {
-            cardsClone[cardsClone.length] = {
-              listKey: listKey,
-              cards: newCards,
-            };
-          }
-
-          console.log(cardsClone);
-          setCards(cardsClone);
+    db.doAddCard(boardKey, listKey, cardTitle)
+      .then((newCard) => {
+        const cardsClone = [...cards];
+        let cardsIndex = cardsClone.findIndex((c) => c.listKey === listKey);
+        if (cardsIndex !== -1) {
+          cardsClone[cardsIndex] = {
+            ...cardsClone[cardsIndex],
+            cards: [...cardsClone[cardsIndex].cards, newCard],
+          };
+        } else {
+          cardsClone.push({ listKey, cards: [newCard] });
         }
-      });
+        setCards(cardsClone);
+      })
+      .catch(console.error);
   };
 
   const handleEditCard = (params) => {
     const { listKey, cardKey, card } = params;
-
-    return db.doEditCard(listKey, cardKey, card).then(() => {
+    return db.doEditCard(boardKey, listKey, cardKey, card).then(() => {
       const updatedCards = [...cards];
-      // cards have listKey and all cards
-      // find the cards of list key and find card out of cards.cards
-      const listIndex = cards.findIndex((card) => card.listKey === listKey);
-      const cardIndex = cards[listIndex].cards.findIndex(
-        (card) => card.key === cardKey
+      const listIndex = updatedCards.findIndex((c) => c.listKey === listKey);
+      const cardIndex = updatedCards[listIndex].cards.findIndex(
+        (c) => c.key === cardKey
       );
-
       updatedCards[listIndex].cards[cardIndex] = {
         ...updatedCards[listIndex].cards[cardIndex],
         ...card,
@@ -118,76 +93,52 @@ export default function Board() {
 
   const handleDeleteCard = (params) => {
     const { listKey, cardKey } = params;
-
-    return db.doDeleteCard(listKey, cardKey).then(() => {
+    return db.doDeleteCard(boardKey, listKey, cardKey).then(() => {
       const cardsClone = [...cards];
-
-      const listIndex = cardsClone.findIndex(
-        (card) => card.listKey === listKey
+      const listIndex = cardsClone.findIndex((c) => c.listKey === listKey);
+      cardsClone[listIndex].cards = cardsClone[listIndex].cards.filter(
+        (c) => c.key !== cardKey
       );
-
-      const updatedCards = cardsClone[listIndex].cards.filter(
-        (card) => card.key !== cardKey
-      );
-
-      cardsClone[listIndex].cards = updatedCards;
-
       setCards(cardsClone);
     });
   };
 
   const handleUpdateList = (listKey, title) => {
-    return db.doUpdateList(boardKey, listKey, { title }).then((res) => {
+    return db.doUpdateList(boardKey, listKey, { title }).then(() => {
       const copiedLists = [...lists];
-      const listIndex = copiedLists.findIndex((list) => list.key === listKey);
+      const listIndex = copiedLists.findIndex((l) => l.key === listKey);
       copiedLists[listIndex] = { ...copiedLists[listIndex], title };
-
       setLists(copiedLists);
     });
   };
 
   const handleDeleteList = (listKey) => {
     db.doDeleteList(boardKey, listKey).then(() => {
-      const copiedLists = [...lists];
-      const updatedLists = copiedLists.filter((list) => list.key !== listKey);
-      setLists(updatedLists);
+      const copiedLists = lists.filter((l) => l.key !== listKey);
+      setLists(copiedLists);
     });
   };
 
-  const handleDeleteBoard = (boardKey) => {
-    return db.doDeleteBoard(boardKey).then(() => {
+  const handleDeleteBoard = (bKey) => {
+    return db.doDeleteBoard(bKey).then(() => {
       history.push("/boards");
     });
   };
 
-  const handleUpdateBoard = (boardKey, title) => {
-    return db.doUpdateBoard(boardKey, title).then(() => {
-      const updatedBoard = { ...board, ...title };
-      setBoard(updatedBoard);
+  const handleUpdateBoard = (bKey, data) => {
+    return db.doUpdateBoard(bKey, data).then(() => {
+      setBoard({ ...board, ...data });
     });
   };
 
   const handleOnDragEnd = (result) => {
     const { destination, source, draggableId, type } = result;
+    if (!destination) return;
 
-    let droppableIdStart;
-    let droppableIdEnd;
-    let droppableIndexStart;
-    let droppableIndexEnd;
-
-    if (destination) {
-      droppableIdEnd = destination.droppableId;
-      droppableIndexEnd = destination.index;
-    }
-
-    if (source) {
-      droppableIdStart = source.droppableId;
-      droppableIndexStart = source.index;
-    }
-
-    if (!destination) {
-      return;
-    }
+    const droppableIdStart = source.droppableId;
+    const droppableIdEnd = destination.droppableId;
+    const droppableIndexStart = source.index;
+    const droppableIndexEnd = destination.index;
 
     if (type === "list") {
       const listsClone = [...lists];
@@ -197,38 +148,25 @@ export default function Board() {
       db.onListMove({ boardKey, lists: listsClone });
     }
 
-    // Card Key = draggable id
-    // old list key = source droppableId
-    // new list key = destination droppableId
     if (type === "card") {
-      console.log(result);
-
-      // change ui, and send the data to movecard to update database
-      // change ui means doing forEach
       if (droppableIdStart === droppableIdEnd) {
         const cardsClone = [...cards];
-
         let cardsIndex = cardsClone.findIndex(
-          (cards) => cards.listKey === droppableIdEnd
+          (c) => c.listKey === droppableIdEnd
         );
-
         let listCards = cardsClone[cardsIndex].cards;
         const card = listCards.splice(droppableIndexStart, 1);
         listCards.splice(droppableIndexEnd, 0, ...card);
-
         setCards(cardsClone);
 
         db.doMoveCard({
+          boardKey,
           cards: cardsClone[cardsIndex].cards,
           newIndex: droppableIndexEnd,
           oldListKey: droppableIdStart,
           newListKey: droppableIdEnd,
           cardKey: draggableId,
-        }).then((snapshot) => {
-          console.log("moving cards will work");
-          console.log(mergeDataWithKey(snapshot.val()));
         });
-        console.log(listCards);
       }
 
       if (droppableIdStart !== droppableIdEnd) {
@@ -238,43 +176,37 @@ export default function Board() {
           const missingCards = lists.filter(
             (list) => !cardsClone.some((card) => list.key === card.listKey)
           );
-
           missingCards.forEach((list) => {
-            cardsClone.push({
-              listKey: list.key,
-              cards: [],
-            });
+            cardsClone.push({ listKey: list.key, cards: [] });
           });
-
           setCards(cardsClone);
         }
 
         let startListIndex = cardsClone.findIndex(
-          (cards) => cards.listKey === droppableIdStart
+          (c) => c.listKey === droppableIdStart
         );
         let endListIndex = cardsClone.findIndex(
-          (cards) => cards.listKey === droppableIdEnd
+          (c) => c.listKey === droppableIdEnd
         );
         let startList = cardsClone[startListIndex].cards;
         let endList = cardsClone[endListIndex].cards;
 
         const card = startList.splice(droppableIndexStart, 1);
         endList.splice(droppableIndexEnd, 0, ...card);
-
         setCards(cardsClone);
+
         db.doMoveCard({
+          boardKey,
           cards: cardsClone[endListIndex].cards,
           newIndex: droppableIndexEnd,
           oldListKey: droppableIdStart,
           newListKey: droppableIdEnd,
           cardKey: draggableId,
-        }).then((snapshot) => {
-          console.log("moving cards will work");
-          console.log(mergeDataWithKey(snapshot.val()));
         });
       }
     }
   };
+
   return (
     <>
       {loading ? (
@@ -302,7 +234,7 @@ export default function Board() {
                   >
                     {lists?.map((list, index) => {
                       const listCards = cards.find(
-                        (cards) => cards.listKey === list.key
+                        (c) => c.listKey === list.key
                       );
 
                       return (
@@ -310,6 +242,7 @@ export default function Board() {
                           <List
                             listKey={list.key}
                             listTitle={list.title}
+                            boardKey={boardKey}
                             cards={listCards}
                             setCards={handleSetCards}
                             handleCreateCard={handleCreateCard}
