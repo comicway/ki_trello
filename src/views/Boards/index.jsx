@@ -5,53 +5,64 @@ import { Link } from "react-router-dom";
 import { Button } from "antd";
 import CreateBoardModal from "../../components/CreateBoardModal";
 import CreateBoardTarea from "../../components/CreateBoardTarea";
+import HomeDashboard from "../../components/HomeDashboard";
 import Loader from "../../components/Loader";
 
-
-function Boards(props) {
+function Boards() {
   const [modalOpen, setModalOpen] = useState(false);
   const [boards, setBoards] = useState([]);
+  const [myPendingTareas, setMyPendingTareas] = useState([]);
+  const [membersWithPendingCounts, setMembersWithPendingCounts] = useState([]);
+  const [currentUserEmail, setCurrentUserEmail] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = firebase.auth.onAuthStateChanged((user) => {
-      if (!user) {
+    const unsubscribe = firebase.auth.onAuthStateChanged(async (user) => {
+      if (!user?.uid || !user?.email) {
         setBoards([]);
+        setMyPendingTareas([]);
+        setMembersWithPendingCounts([]);
+        setCurrentUserEmail("");
         setLoading(false);
         return;
       }
+
       setLoading(true);
-      db.doClaimMembership(user)
-        .then(() => db.onceGetBoards(user.uid, user.email))
-        .then((result) => {
-          setBoards(result);
-          setLoading(false);
-        })
-        .catch((err) => {
-          setLoading(false);
-          console.error("Error cargando boards:", err);
+      setCurrentUserEmail(user.email);
+
+      try {
+        await db.doClaimMembership(user).catch((err) => {
+          console.error("Error en claimMembership:", err);
         });
+
+        const result = await db.onceGetBoards(user.uid, user.email);
+        setBoards(result);
+
+        const dashboard = await db.onceGetHomeDashboard(result, user.email);
+        setMyPendingTareas(dashboard.myPendingTareas);
+        setMembersWithPendingCounts(dashboard.membersWithPendingCounts);
+      } catch (err) {
+        console.error("Error cargando boards:", err);
+        setBoards([]);
+        setMyPendingTareas([]);
+        setMembersWithPendingCounts([]);
+      } finally {
+        setLoading(false);
+      }
     });
     return () => unsubscribe();
   }, []);
 
-
   const handleCreateBoard = (board) => {
     db.doCreateBoard(board).then((response) => {
-      console.log(response);
-      const updatedBoards = [...boards];
-      updatedBoards.push(response);
+      const updatedBoards = [...boards, response];
       setBoards(updatedBoards);
       setModalOpen(false);
+      db.onceGetHomeDashboard(updatedBoards, currentUserEmail).then((dashboard) => {
+        setMyPendingTareas(dashboard.myPendingTareas);
+        setMembersWithPendingCounts(dashboard.membersWithPendingCounts);
+      });
     });
-  };
-
-  const handleModalOpen = () => {
-    setModalOpen(true);
-  };
-
-  const handleModalClose = () => {
-    setModalOpen(false);
   };
 
   return (
@@ -59,34 +70,37 @@ function Boards(props) {
       {loading ? (
         <Loader />
       ) : (
-        <div className="h-full">
+        <div className="h-full overflow-auto">
           <div className="flex flex-col items-center justify-center relative py-6 px-4 md:grid md:grid-cols-1 lg:grid-cols-3 md:gap-3 md:w-auto md:max-w-4xl md:mx-auto">
-            {boards.map((board, index) => {
-              return (
-                <div key={index}>
-                  <Link
-                    index={index}
-                    to={{
-                      pathname: `b/${board.key}`,
-                      state: { boardKey: board.key },
-                    }}
-                    className="w-full mb-6 md:m-0 block"
-                  >
-                    <Button className="h-[120px] w-full md:h-[188px] md:w-[280px] px-4 py-3 bg-dark-blue rounded-md text-base text-pearl-white font-medium overflow-hidden whitespace-normal border border-border-ki hover:bg-ki-black hover:text-ki-orange transition-colors">
-                      <span className="block break-words hyphens-auto">{board.title}</span>
-                    </Button>
-                  </Link>
-                </div>
-              );
-            })}
+            {boards.map((board) => (
+              <div key={board.key}>
+                <Link
+                  to={{
+                    pathname: `b/${board.key}`,
+                    state: { boardKey: board.key },
+                  }}
+                  className="w-full mb-6 md:m-0 block"
+                >
+                  <Button className="h-[120px] w-full md:h-[188px] md:w-[280px] px-4 py-3 bg-dark-blue rounded-md text-base text-pearl-white font-medium overflow-hidden whitespace-normal border border-border-ki hover:bg-ki-black hover:text-ki-orange transition-colors">
+                    <span className="block break-words hyphens-auto">{board.title}</span>
+                  </Button>
+                </Link>
+              </div>
+            ))}
             <div className="w-full md:w-[280px] md:h-[188px]">
-              <CreateBoardTarea onClick={() => handleModalOpen()} />
+              <CreateBoardTarea onClick={() => setModalOpen(true)} />
             </div>
           </div>
 
+          <HomeDashboard
+            myPendingTareas={myPendingTareas}
+            membersWithPendingCounts={membersWithPendingCounts}
+            currentUserEmail={currentUserEmail}
+          />
+
           <CreateBoardModal
             onCreateBoard={handleCreateBoard}
-            onCloseModal={handleModalClose}
+            onCloseModal={() => setModalOpen(false)}
             visible={modalOpen}
           />
         </div>

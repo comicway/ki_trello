@@ -24,6 +24,7 @@ export default function Tarea(props) {
     done,
     doneAt,
     doneBy,
+    readyForSalesforce,
     tareaKey,
     listKey,
     boardKey,
@@ -32,9 +33,18 @@ export default function Tarea(props) {
     handleEditTarea,
     handleDeleteTarea,
     handleMoveTareaManual,
+    autoFocus,
+    onAutoFocusConsumed,
   } = props;
 
   useEffect(() => { setTareaTitle(title); }, [title]);
+
+  useEffect(() => {
+    if (autoFocus) {
+      setEditing(true);
+      onAutoFocusConsumed?.();
+    }
+  }, [autoFocus]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleTitleChange = (e) => setTareaTitle(e.target.value);
   const handleShowIcons = () => setShowIcons(true);
@@ -127,6 +137,7 @@ export default function Tarea(props) {
         tareaDone={!!done}
         tareaDoneAt={doneAt}
         tareaDoneBy={doneBy}
+        tareaReadyForSalesforce={!!readyForSalesforce}
         tareaKey={tareaKey}
         listKey={listKey}
         boardKey={boardKey}

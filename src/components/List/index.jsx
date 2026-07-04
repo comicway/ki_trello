@@ -23,7 +23,11 @@ export default function List(props) {
     handleUpdateList,
     handleDeleteList,
     index,
+    focusTareaKey,
+    onFocusConsumed,
   } = props;
+
+  const tareaCount = tareas?.tareas?.length || 0;
 
   useEffect(() => {
     if (!boardKey || !listKey) return;
@@ -54,6 +58,7 @@ export default function List(props) {
           <ListHeader
             title={listTitle}
             listKey={listKey}
+            tareaCount={tareaCount}
             handleUpdateList={handleUpdateList}
             handleDeleteList={handleDeleteList}
           />
@@ -76,6 +81,7 @@ export default function List(props) {
                           done={tarea.done || false}
                           doneAt={tarea.doneAt || null}
                           doneBy={tarea.doneBy || null}
+                          readyForSalesforce={tarea.readyForSalesforce || false}
                           listKey={listKey}
                           boardKey={boardKey}
                           lists={lists}
@@ -83,6 +89,8 @@ export default function List(props) {
                           handleEditTarea={handleEditTarea}
                           handleDeleteTarea={handleDeleteTarea}
                           handleMoveTareaManual={handleMoveTareaManual}
+                          autoFocus={focusTareaKey === tarea.key}
+                          onAutoFocusConsumed={onFocusConsumed}
                         />
                       ))}
                     {provided.placeholder}

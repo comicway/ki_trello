@@ -16,6 +16,7 @@ import Comments from "../Comments";
 import LinkPreviewList from "../LinkPreviewList";
 import DoneToggle from "../DoneToggle";
 import DoneFooter from "../DoneFooter";
+import ReadyForSalesforceSwitch from "../ReadyForSalesforceSwitch";
 import MarkdownContent from "../MarkdownContent";
 import useResizableDrawer from "../../hooks/useResizableDrawer";
 import { UserContext } from "../../providers/UserProvider";
@@ -34,6 +35,7 @@ export default function TareaModal(props) {
   const [done, setDone] = useState(false);
   const [doneAt, setDoneAt] = useState(null);
   const [doneBy, setDoneBy] = useState(null);
+  const [readyForSalesforce, setReadyForSalesforce] = useState(false);
   const [copied, setCopied] = useState(false);
   const [drawerWidth, handleResizeMouseDown] = useResizableDrawer(520);
   const currentUser = useContext(UserContext);
@@ -49,6 +51,7 @@ export default function TareaModal(props) {
     tareaDone,
     tareaDoneAt,
     tareaDoneBy,
+    tareaReadyForSalesforce,
     handleEditTarea,
     tareaKey,
     listKey,
@@ -67,7 +70,8 @@ export default function TareaModal(props) {
     setDone(!!tareaDone);
     setDoneAt(tareaDoneAt || null);
     setDoneBy(tareaDoneBy || null);
-  }, [tareaTitle, tareaDescription, tareaDueDate, tareaAssigneeEmail, tareaSubtasks, tareaDone, tareaDoneAt, tareaDoneBy]);
+    setReadyForSalesforce(!!tareaReadyForSalesforce);
+  }, [tareaTitle, tareaDescription, tareaDueDate, tareaAssigneeEmail, tareaSubtasks, tareaDone, tareaDoneAt, tareaDoneBy, tareaReadyForSalesforce]);
 
   const handleSave = (updates) => {
     let newDoneAt = updates.doneAt !== undefined ? updates.doneAt : doneAt;
@@ -97,6 +101,8 @@ export default function TareaModal(props) {
       done: newDone,
       doneAt: newDoneAt,
       doneBy: newDoneBy,
+      readyForSalesforce:
+        updates.readyForSalesforce !== undefined ? updates.readyForSalesforce : readyForSalesforce,
     };
     return handleEditTarea({ listKey, tareaKey, tarea: updatedTarea });
   };
@@ -122,6 +128,7 @@ export default function TareaModal(props) {
       description: "",
       dueDate: null,
       assigneeEmail: null,
+      readyForSalesforce: false,
     };
     const updated = [...subtasks, newSubtask];
     setSubtasks(updated);
@@ -456,6 +463,14 @@ export default function TareaModal(props) {
         listKey={listKey}
         tareaKey={tareaKey}
         members={members}
+      />
+
+      <ReadyForSalesforceSwitch
+        value={readyForSalesforce}
+        onChange={(next) => {
+          setReadyForSalesforce(next);
+          handleSave({ readyForSalesforce: next });
+        }}
       />
 
       {/* Done footer */}

@@ -7,6 +7,11 @@ import List from "../../components/List";
 import CreateList from "../../components/CreateList";
 import Loader from "../../components/Loader";
 import BoardTitle from "../../components/BoardTitle";
+import BoardListView from "../../components/BoardListView";
+import { getOwnerIds } from "../../utils/boardRoles";
+import { ensureTareasForLists, getListTareasIndex } from "../../utils/tareasState";
+
+const VIEW_MODES = { BOARD: "board", LIST: "list" };
 
 export default function Board() {
   const [lists, setLists] = useState([]);
@@ -16,6 +21,8 @@ export default function Board() {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [dataFetched, setDataFetched] = useState(false);
+  const [focusTareaKey, setFocusTareaKey] = useState(null);
+  const [viewMode, setViewMode] = useState(VIEW_MODES.BOARD);
   const history = useHistory();
 
   useEffect(() => {
@@ -45,16 +52,51 @@ export default function Board() {
     }
   }, [dataFetched]);
 
+  useEffect(() => {
+    if (viewMode !== VIEW_MODES.LIST || !boardKey || lists.length === 0) return;
+    Promise.all(lists.map((list) => db.onceGetTarea(boardKey, list.key))).then((results) => {
+      setTareas(
+        lists.map((list, i) => ({
+          listKey: list.key,
+          tareas: results[i] || [],
+        }))
+      );
+    }).catch(console.error);
+  }, [viewMode, boardKey, lists]);
+
+  const handleQuickAddTarea = () => {
+    if (lists.length === 0) return;
+    const firstListKey = lists[0].key;
+    db.doAddTareaAtStart(boardKey, firstListKey, "")
+      .then((newTarea) => {
+        const tareasClone = [...tareas];
+        const listIndex = tareasClone.findIndex((c) => c.listKey === firstListKey);
+        if (listIndex !== -1) {
+          const existing = tareasClone[listIndex].tareas || [];
+          tareasClone[listIndex] = {
+            ...tareasClone[listIndex],
+            tareas: [newTarea, ...existing.map((t) => ({ ...t, index: t.index + 1 }))],
+          };
+        } else {
+          tareasClone.push({ listKey: firstListKey, tareas: [newTarea] });
+        }
+        setTareas(tareasClone);
+        setFocusTareaKey(newTarea.key);
+      })
+      .catch(console.error);
+  };
+
   const handleSetTareas = (listTareas) => {
     setTareas((prevState) => [...prevState, listTareas]);
   };
 
   const handleCreateList = (listTitle) => {
     db.doCreateList(boardKey, { title: listTitle }).then((res) => {
-      const copiedLists = [...lists];
-      const copiedTareas = [...tareas];
-      copiedTareas.push({ listKey: res.key, tareas: [] });
-      copiedLists.push(res);
+      const copiedLists = [...lists, res];
+      const copiedTareas = ensureTareasForLists(copiedLists, [
+        ...tareas,
+        { listKey: res.key, tareas: [] },
+      ]);
       setLists(copiedLists);
       setTareas(copiedTareas);
     });
@@ -182,65 +224,50 @@ export default function Board() {
       listsClone.splice(droppableIndexEnd, 0, ...pulledOutList);
       setLists(listsClone);
       db.onListMove({ boardKey, lists: listsClone });
+      return;
     }
 
-    if (type === "tarea") {
-      if (droppableIdStart === droppableIdEnd) {
-        const tareasClone = [...tareas];
-        let tareasIndex = tareasClone.findIndex(
-          (c) => c.listKey === droppableIdEnd
-        );
-        let listTareas = tareasClone[tareasIndex].tareas;
-        const tarea = listTareas.splice(droppableIndexStart, 1);
-        listTareas.splice(droppableIndexEnd, 0, ...tarea);
-        setTareas(tareasClone);
+    if (type !== "tarea") return;
 
-        db.doMoveTarea({
-          boardKey,
-          tareas: tareasClone[tareasIndex].tareas,
-          newIndex: droppableIndexEnd,
-          oldListKey: droppableIdStart,
-          newListKey: droppableIdEnd,
-          tareaKey: draggableId,
-        });
-      }
+    const tareasClone = ensureTareasForLists(lists, tareas);
+    const startIndex = getListTareasIndex(tareasClone, droppableIdStart);
+    const endIndex = getListTareasIndex(tareasClone, droppableIdEnd);
+    if (startIndex === -1 || endIndex === -1) return;
 
-      if (droppableIdStart !== droppableIdEnd) {
-        const tareasClone = [...tareas];
+    const startList = [...tareasClone[startIndex].tareas];
+    const [movedTarea] = startList.splice(droppableIndexStart, 1);
+    if (!movedTarea) return;
 
-        if (tareas.length !== lists.length) {
-          const missingTareas = lists.filter(
-            (list) => !tareasClone.some((tarea) => list.key === tarea.listKey)
-          );
-          missingTareas.forEach((list) => {
-            tareasClone.push({ listKey: list.key, tareas: [] });
-          });
-          setTareas(tareasClone);
-        }
+    if (droppableIdStart === droppableIdEnd) {
+      startList.splice(droppableIndexEnd, 0, movedTarea);
+      tareasClone[startIndex] = { ...tareasClone[startIndex], tareas: startList };
+      setTareas(tareasClone);
 
-        let startListIndex = tareasClone.findIndex(
-          (c) => c.listKey === droppableIdStart
-        );
-        let endListIndex = tareasClone.findIndex(
-          (c) => c.listKey === droppableIdEnd
-        );
-        let startList = tareasClone[startListIndex].tareas;
-        let endList = tareasClone[endListIndex].tareas;
-
-        const tarea = startList.splice(droppableIndexStart, 1);
-        endList.splice(droppableIndexEnd, 0, ...tarea);
-        setTareas(tareasClone);
-
-        db.doMoveTarea({
-          boardKey,
-          tareas: tareasClone[endListIndex].tareas,
-          newIndex: droppableIndexEnd,
-          oldListKey: droppableIdStart,
-          newListKey: droppableIdEnd,
-          tareaKey: draggableId,
-        });
-      }
+      db.doMoveTarea({
+        boardKey,
+        tareas: startList,
+        newIndex: droppableIndexEnd,
+        oldListKey: droppableIdStart,
+        newListKey: droppableIdEnd,
+        tareaKey: draggableId,
+      });
+      return;
     }
+
+    const endList = [...tareasClone[endIndex].tareas];
+    endList.splice(droppableIndexEnd, 0, movedTarea);
+    tareasClone[startIndex] = { ...tareasClone[startIndex], tareas: startList };
+    tareasClone[endIndex] = { ...tareasClone[endIndex], tareas: endList };
+    setTareas(tareasClone);
+
+    db.doMoveTarea({
+      boardKey,
+      tareas: endList,
+      newIndex: droppableIndexEnd,
+      oldListKey: droppableIdStart,
+      newListKey: droppableIdEnd,
+      tareaKey: draggableId,
+    });
   };
 
   return (
@@ -252,10 +279,58 @@ export default function Board() {
           <BoardTitle
             title={board.title}
             boardKey={boardKey}
+            members={members}
             updateBoard={handleUpdateBoard}
             deleteBoard={handleDeleteBoard}
             onMembersUpdated={setMembers}
+            onOwnersUpdated={(newOwnerIds) =>
+              setBoard((b) => ({
+                ...b,
+                ownerIds: newOwnerIds,
+                ownerId: newOwnerIds[0],
+              }))
+            }
+            onQuickAddTarea={handleQuickAddTarea}
+            ownerIds={getOwnerIds(board)}
           />
+
+          <div className="flex items-center gap-1 px-4 py-2 bg-dark-blue border-b border-border-ki">
+            <button
+              type="button"
+              onClick={() => setViewMode(VIEW_MODES.LIST)}
+              className={`px-3 py-1 text-sm font-medium rounded transition-colors bg-transparent border-none cursor-pointer ${
+                viewMode === VIEW_MODES.LIST
+                  ? "text-ki-orange"
+                  : "text-light-gray hover:text-pearl-white"
+              }`}
+            >
+              Lista
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode(VIEW_MODES.BOARD)}
+              className={`px-3 py-1 text-sm font-medium rounded transition-colors bg-transparent border-none cursor-pointer ${
+                viewMode === VIEW_MODES.BOARD
+                  ? "text-ki-orange"
+                  : "text-light-gray hover:text-pearl-white"
+              }`}
+            >
+              Tablero
+            </button>
+          </div>
+
+          {viewMode === VIEW_MODES.LIST ? (
+            <BoardListView
+              lists={lists}
+              tareas={tareas}
+              boardKey={boardKey}
+              members={members}
+              handleEditTarea={handleEditTarea}
+              handleMoveTareaManual={handleMoveTareaManual}
+              handleCreateList={handleCreateList}
+              onDragEnd={handleOnDragEnd}
+            />
+          ) : (
           <DragDropContext onDragEnd={handleOnDragEnd}>
             <div className="flex-1 overflow-auto whitespace-nowrap mb-2 pl-2 pr-1 flex">
               <Droppable
@@ -288,11 +363,12 @@ export default function Board() {
                             handleMoveTareaManual={handleMoveTareaManual}
                             lists={lists}
                             members={members}
-                            setDataFetched={setDataFetched}
                             index={index}
                             title={list.title}
                             handleUpdateList={handleUpdateList}
                             handleDeleteList={handleDeleteList}
+                            focusTareaKey={focusTareaKey}
+                            onFocusConsumed={() => setFocusTareaKey(null)}
                           />
                         </div>
                       );
@@ -307,6 +383,7 @@ export default function Board() {
               </div>
             </div>
           </DragDropContext>
+          )}
         </div>
       )}
     </>

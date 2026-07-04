@@ -17,3 +17,12 @@ export const buildDoneUpdate = (nextDone, currentUser, existing = {}) => {
   }
   return { done: false, doneAt: null, doneBy: null };
 };
+
+export const isFinalizadoTitle = (title) =>
+  title?.trim().toLowerCase() === "finalizado";
+
+export const isPendingTarea = (tarea, listTitle) => {
+  if (tarea?.done) return false;
+  if (isFinalizadoTitle(listTitle)) return false;
+  return true;
+};
