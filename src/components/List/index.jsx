@@ -1,22 +1,25 @@
 import { useState, useEffect } from "react";
 import { Droppable, Draggable } from "react-beautiful-dnd";
 import { db } from "../../firebase";
-import CreateCard from "../CreateCard";
+import CreateTarea from "../CreateTarea";
 import ListHeader from "./ListHeader";
-import Card from "../Card";
+import Tarea from "../Tarea";
 
 export default function List(props) {
-  const [creatingCard, setCreatingCard] = useState(false);
+  const [creatingTarea, setCreatingTarea] = useState(false);
 
   const {
-    cards,
-    setCards,
+    tareas,
+    setTareas,
     listTitle,
     listKey,
     boardKey,
-    handleCreateCard,
-    handleEditCard,
-    handleDeleteCard,
+    handleCreateTarea,
+    handleEditTarea,
+    handleDeleteTarea,
+    handleMoveTareaManual,
+    lists,
+    members,
     handleUpdateList,
     handleDeleteList,
     index,
@@ -24,19 +27,19 @@ export default function List(props) {
 
   useEffect(() => {
     if (!boardKey || !listKey) return;
-    db.onceGetCard(boardKey, listKey).then((cardArray) => {
-      if (cardArray && cardArray.length > 0) {
+    db.onceGetTarea(boardKey, listKey).then((tareaArray) => {
+      if (tareaArray && tareaArray.length > 0) {
         const data = {
           listKey,
-          cards: cardArray,
+          tareas: tareaArray,
         };
-        setCards(data);
+        setTareas(data);
       }
     });
   }, [boardKey, listKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleCreatingCard = () => {
-    setCreatingCard(!creatingCard);
+  const handleCreatingTarea = () => {
+    setCreatingTarea(!creatingTarea);
   };
 
   return (
@@ -56,28 +59,38 @@ export default function List(props) {
           />
           <div className="rounded box-border flex flex-col max-h-full relative whitespace-normal">
             <div className="px-4 flex-auto mb-0 overflow-y-auto overflow-x-hidden z-[1] min-h-0">
-              <Droppable droppableId={String(listKey)} type="card">
+              <Droppable droppableId={String(listKey)} type="tarea">
                 {(provided) => (
                   <div {...provided.droppableProps} ref={provided.innerRef}>
-                    {cards &&
-                      cards.cards?.map((card, index) => (
-                        <Card
-                          key={card.key}
+                    {tareas &&
+                      tareas.tareas?.map((tarea, index) => (
+                        <Tarea
+                          key={tarea.key}
                           index={index}
-                          cardKey={card.key}
-                          title={card.title}
-                          description={card.description ? card.description : ""}
+                          tareaKey={tarea.key}
+                          title={tarea.title}
+                          description={tarea.description ? tarea.description : ""}
+                          dueDate={tarea.dueDate || null}
+                          assigneeEmail={tarea.assigneeEmail || null}
+                          subtasks={tarea.subtasks || []}
+                          done={tarea.done || false}
+                          doneAt={tarea.doneAt || null}
+                          doneBy={tarea.doneBy || null}
                           listKey={listKey}
-                          handleEditCard={handleEditCard}
-                          handleDeleteCard={handleDeleteCard}
+                          boardKey={boardKey}
+                          lists={lists}
+                          members={members}
+                          handleEditTarea={handleEditTarea}
+                          handleDeleteTarea={handleDeleteTarea}
+                          handleMoveTareaManual={handleMoveTareaManual}
                         />
                       ))}
                     {provided.placeholder}
-                    <CreateCard
+                    <CreateTarea
                       listKey={listKey}
-                      creatingCard={creatingCard}
-                      handleCreatingCard={handleCreatingCard}
-                      handleCreateCard={handleCreateCard}
+                      creatingTarea={creatingTarea}
+                      handleCreatingTarea={handleCreatingTarea}
+                      handleCreateTarea={handleCreateTarea}
                     />
                   </div>
                 )}

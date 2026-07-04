@@ -10,9 +10,10 @@ import BoardTitle from "../../components/BoardTitle";
 
 export default function Board() {
   const [lists, setLists] = useState([]);
-  const [cards, setCards] = useState([]);
+  const [tareas, setTareas] = useState([]);
   const [board, setBoard] = useState({});
   const [boardKey, setBoardKey] = useState("");
+  const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [dataFetched, setDataFetched] = useState(false);
   const history = useHistory();
@@ -20,10 +21,13 @@ export default function Board() {
   useEffect(() => {
     setLoading(true);
     const bKey = getBoardKey();
-    Promise.all([db.onceGetBoard(bKey), db.onceGetLists(bKey)])
-      .then(([board, lists]) => {
-        setLists(lists); // already sorted by index from Firestore query
+    // Reclamar membresía si el usuario fue invitado por email
+    db.doClaimMembership().catch(console.error);
+    Promise.all([db.onceGetBoard(bKey), db.onceGetLists(bKey), db.onceGetMembers(bKey)])
+      .then(([board, lists, members]) => {
+        setLists(lists);
         setBoard(board || {});
+        setMembers(members || []);
         setBoardKey(bKey);
         setLoading(false);
         setDataFetched(true);
@@ -41,65 +45,97 @@ export default function Board() {
     }
   }, [dataFetched]);
 
-  const handleSetCards = (listCards) => {
-    setCards((prevState) => [...prevState, listCards]);
+  const handleSetTareas = (listTareas) => {
+    setTareas((prevState) => [...prevState, listTareas]);
   };
 
   const handleCreateList = (listTitle) => {
     db.doCreateList(boardKey, { title: listTitle }).then((res) => {
       const copiedLists = [...lists];
-      const copiedCards = [...cards];
-      copiedCards.push({ listKey: res.key, cards: [] });
+      const copiedTareas = [...tareas];
+      copiedTareas.push({ listKey: res.key, tareas: [] });
       copiedLists.push(res);
       setLists(copiedLists);
-      setCards(copiedCards);
+      setTareas(copiedTareas);
     });
   };
 
-  const handleCreateCard = (params) => {
-    const { listKey, cardTitle } = params;
-    db.doAddCard(boardKey, listKey, cardTitle)
-      .then((newCard) => {
-        const cardsClone = [...cards];
-        let cardsIndex = cardsClone.findIndex((c) => c.listKey === listKey);
-        if (cardsIndex !== -1) {
-          cardsClone[cardsIndex] = {
-            ...cardsClone[cardsIndex],
-            cards: [...cardsClone[cardsIndex].cards, newCard],
+  const handleCreateTarea = (params) => {
+    const { listKey, tareaTitle } = params;
+    db.doAddTarea(boardKey, listKey, tareaTitle)
+      .then((newTarea) => {
+        const tareasClone = [...tareas];
+        let tareasIndex = tareasClone.findIndex((c) => c.listKey === listKey);
+        if (tareasIndex !== -1) {
+          tareasClone[tareasIndex] = {
+            ...tareasClone[tareasIndex],
+            tareas: [...tareasClone[tareasIndex].tareas, newTarea],
           };
         } else {
-          cardsClone.push({ listKey, cards: [newCard] });
+          tareasClone.push({ listKey, tareas: [newTarea] });
         }
-        setCards(cardsClone);
+        setTareas(tareasClone);
       })
       .catch(console.error);
   };
 
-  const handleEditCard = (params) => {
-    const { listKey, cardKey, card } = params;
-    return db.doEditCard(boardKey, listKey, cardKey, card).then(() => {
-      const updatedCards = [...cards];
-      const listIndex = updatedCards.findIndex((c) => c.listKey === listKey);
-      const cardIndex = updatedCards[listIndex].cards.findIndex(
-        (c) => c.key === cardKey
+  const handleEditTarea = (params) => {
+    const { listKey, tareaKey, tarea } = params;
+    return db.doEditTarea(boardKey, listKey, tareaKey, tarea).then(() => {
+      const updatedTareas = [...tareas];
+      const listIndex = updatedTareas.findIndex((c) => c.listKey === listKey);
+      const tareaIndex = updatedTareas[listIndex].tareas.findIndex(
+        (c) => c.key === tareaKey
       );
-      updatedCards[listIndex].cards[cardIndex] = {
-        ...updatedCards[listIndex].cards[cardIndex],
-        ...card,
+      updatedTareas[listIndex].tareas[tareaIndex] = {
+        ...updatedTareas[listIndex].tareas[tareaIndex],
+        ...tarea,
       };
-      setCards(updatedCards);
+      setTareas(updatedTareas);
     });
   };
 
-  const handleDeleteCard = (params) => {
-    const { listKey, cardKey } = params;
-    return db.doDeleteCard(boardKey, listKey, cardKey).then(() => {
-      const cardsClone = [...cards];
-      const listIndex = cardsClone.findIndex((c) => c.listKey === listKey);
-      cardsClone[listIndex].cards = cardsClone[listIndex].cards.filter(
-        (c) => c.key !== cardKey
+  const handleDeleteTarea = (params) => {
+    const { listKey, tareaKey } = params;
+    return db.doDeleteTarea(boardKey, listKey, tareaKey).then(() => {
+      const tareasClone = [...tareas];
+      const listIndex = tareasClone.findIndex((c) => c.listKey === listKey);
+      tareasClone[listIndex].tareas = tareasClone[listIndex].tareas.filter(
+        (c) => c.key !== tareaKey
       );
-      setCards(cardsClone);
+      setTareas(tareasClone);
+    });
+  };
+
+  const handleMoveTareaManual = (tareaKey, oldListKey, newListKey) => {
+    if (oldListKey === newListKey) return;
+    const tareasClone = [...tareas];
+
+    // Ensure all lists exist in tareasClone
+    lists.forEach((list) => {
+      if (!tareasClone.some((t) => t.listKey === list.key)) {
+        tareasClone.push({ listKey: list.key, tareas: [] });
+      }
+    });
+
+    const startIndex = tareasClone.findIndex((c) => c.listKey === oldListKey);
+    const endIndex = tareasClone.findIndex((c) => c.listKey === newListKey);
+
+    const startList = tareasClone[startIndex].tareas;
+    const tareaIdx = startList.findIndex((t) => t.key === tareaKey);
+    if (tareaIdx === -1) return;
+
+    const [movedTarea] = startList.splice(tareaIdx, 1);
+    tareasClone[endIndex].tareas.push(movedTarea);
+    setTareas(tareasClone);
+
+    db.doMoveTarea({
+      boardKey,
+      tareas: tareasClone[endIndex].tareas,
+      newIndex: tareasClone[endIndex].tareas.length - 1,
+      oldListKey,
+      newListKey,
+      tareaKey,
     });
   };
 
@@ -148,60 +184,60 @@ export default function Board() {
       db.onListMove({ boardKey, lists: listsClone });
     }
 
-    if (type === "card") {
+    if (type === "tarea") {
       if (droppableIdStart === droppableIdEnd) {
-        const cardsClone = [...cards];
-        let cardsIndex = cardsClone.findIndex(
+        const tareasClone = [...tareas];
+        let tareasIndex = tareasClone.findIndex(
           (c) => c.listKey === droppableIdEnd
         );
-        let listCards = cardsClone[cardsIndex].cards;
-        const card = listCards.splice(droppableIndexStart, 1);
-        listCards.splice(droppableIndexEnd, 0, ...card);
-        setCards(cardsClone);
+        let listTareas = tareasClone[tareasIndex].tareas;
+        const tarea = listTareas.splice(droppableIndexStart, 1);
+        listTareas.splice(droppableIndexEnd, 0, ...tarea);
+        setTareas(tareasClone);
 
-        db.doMoveCard({
+        db.doMoveTarea({
           boardKey,
-          cards: cardsClone[cardsIndex].cards,
+          tareas: tareasClone[tareasIndex].tareas,
           newIndex: droppableIndexEnd,
           oldListKey: droppableIdStart,
           newListKey: droppableIdEnd,
-          cardKey: draggableId,
+          tareaKey: draggableId,
         });
       }
 
       if (droppableIdStart !== droppableIdEnd) {
-        const cardsClone = [...cards];
+        const tareasClone = [...tareas];
 
-        if (cards.length !== lists.length) {
-          const missingCards = lists.filter(
-            (list) => !cardsClone.some((card) => list.key === card.listKey)
+        if (tareas.length !== lists.length) {
+          const missingTareas = lists.filter(
+            (list) => !tareasClone.some((tarea) => list.key === tarea.listKey)
           );
-          missingCards.forEach((list) => {
-            cardsClone.push({ listKey: list.key, cards: [] });
+          missingTareas.forEach((list) => {
+            tareasClone.push({ listKey: list.key, tareas: [] });
           });
-          setCards(cardsClone);
+          setTareas(tareasClone);
         }
 
-        let startListIndex = cardsClone.findIndex(
+        let startListIndex = tareasClone.findIndex(
           (c) => c.listKey === droppableIdStart
         );
-        let endListIndex = cardsClone.findIndex(
+        let endListIndex = tareasClone.findIndex(
           (c) => c.listKey === droppableIdEnd
         );
-        let startList = cardsClone[startListIndex].cards;
-        let endList = cardsClone[endListIndex].cards;
+        let startList = tareasClone[startListIndex].tareas;
+        let endList = tareasClone[endListIndex].tareas;
 
-        const card = startList.splice(droppableIndexStart, 1);
-        endList.splice(droppableIndexEnd, 0, ...card);
-        setCards(cardsClone);
+        const tarea = startList.splice(droppableIndexStart, 1);
+        endList.splice(droppableIndexEnd, 0, ...tarea);
+        setTareas(tareasClone);
 
-        db.doMoveCard({
+        db.doMoveTarea({
           boardKey,
-          cards: cardsClone[endListIndex].cards,
+          tareas: tareasClone[endListIndex].tareas,
           newIndex: droppableIndexEnd,
           oldListKey: droppableIdStart,
           newListKey: droppableIdEnd,
-          cardKey: draggableId,
+          tareaKey: draggableId,
         });
       }
     }
@@ -218,6 +254,7 @@ export default function Board() {
             boardKey={boardKey}
             updateBoard={handleUpdateBoard}
             deleteBoard={handleDeleteBoard}
+            onMembersUpdated={setMembers}
           />
           <DragDropContext onDragEnd={handleOnDragEnd}>
             <div className="flex-1 overflow-auto whitespace-nowrap mb-2 pl-2 pr-1 flex">
@@ -233,7 +270,7 @@ export default function Board() {
                     ref={provided.innerRef}
                   >
                     {lists?.map((list, index) => {
-                      const listCards = cards.find(
+                      const listTareas = tareas.find(
                         (c) => c.listKey === list.key
                       );
 
@@ -243,11 +280,14 @@ export default function Board() {
                             listKey={list.key}
                             listTitle={list.title}
                             boardKey={boardKey}
-                            cards={listCards}
-                            setCards={handleSetCards}
-                            handleCreateCard={handleCreateCard}
-                            handleEditCard={handleEditCard}
-                            handleDeleteCard={handleDeleteCard}
+                            tareas={listTareas}
+                            setTareas={handleSetTareas}
+                            handleCreateTarea={handleCreateTarea}
+                            handleEditTarea={handleEditTarea}
+                            handleDeleteTarea={handleDeleteTarea}
+                            handleMoveTareaManual={handleMoveTareaManual}
+                            lists={lists}
+                            members={members}
                             setDataFetched={setDataFetched}
                             index={index}
                             title={list.title}
