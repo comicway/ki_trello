@@ -1,29 +1,38 @@
 import { useState, useEffect } from "react";
 import { db } from "../../firebase";
+import { firebase } from "../../firebase";
 import { Link } from "react-router-dom";
 import { Button } from "antd";
 import CreateBoardModal from "../../components/CreateBoardModal";
-import CreateBoardCard from "../../components/CreateBoardCard";
+import CreateBoardTarea from "../../components/CreateBoardTarea";
 import Loader from "../../components/Loader";
 
 
 function Boards(props) {
   const [modalOpen, setModalOpen] = useState(false);
   const [boards, setBoards] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Get boards
   useEffect(() => {
-    setLoading(true);
-    db.onceGetBoards()
-      .then((boards) => {
-        setBoards(boards);
+    const unsubscribe = firebase.auth.onAuthStateChanged((user) => {
+      if (!user) {
+        setBoards([]);
         setLoading(false);
-      })
-      .catch((err) => {
-        setLoading(false);
-        console.error(err);
-      });
+        return;
+      }
+      setLoading(true);
+      db.doClaimMembership(user)
+        .then(() => db.onceGetBoards(user.uid, user.email))
+        .then((result) => {
+          setBoards(result);
+          setLoading(false);
+        })
+        .catch((err) => {
+          setLoading(false);
+          console.error("Error cargando boards:", err);
+        });
+    });
+    return () => unsubscribe();
   }, []);
 
 
@@ -71,7 +80,7 @@ function Boards(props) {
               );
             })}
             <div className="w-full md:w-[280px] md:h-[188px]">
-              <CreateBoardCard onClick={() => handleModalOpen()} />
+              <CreateBoardTarea onClick={() => handleModalOpen()} />
             </div>
           </div>
 
