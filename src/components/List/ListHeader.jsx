@@ -6,7 +6,7 @@ export default function ListHeader(props) {
   const [listHeader, setListHeader] = useState("");
   const [editing, setEditing] = useState(false);
 
-  const { title, listKey, handleUpdateList, handleDeleteList } = props;
+  const { title, listKey, tareaCount = 0, handleUpdateList, handleDeleteList } = props;
 
   useEffect(() => {
     setListHeader(title);
@@ -62,11 +62,16 @@ export default function ListHeader(props) {
         </form>
       ) : (
         <>
-          <div
-            className="max-w-[200px] overflow-hidden block text-ellipsis text-pearl-white cursor-pointer font-medium"
-            onClick={() => handleEnableEdit()}
-          >
-            {title}
+          <div className="flex items-center gap-2 min-w-0">
+            <div
+              className="max-w-[200px] overflow-hidden block text-ellipsis text-pearl-white cursor-pointer font-medium"
+              onClick={() => handleEnableEdit()}
+            >
+              {title}
+            </div>
+            <span className="flex-shrink-0 min-w-[22px] h-[22px] px-1.5 flex items-center justify-center rounded-full bg-dark-blue border border-border-ki text-light-gray text-xs font-medium">
+              {tareaCount}
+            </span>
           </div>
         </>
       )}

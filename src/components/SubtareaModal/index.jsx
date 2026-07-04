@@ -12,6 +12,7 @@ import Comments from "../Comments";
 import LinkPreviewList from "../LinkPreviewList";
 import DoneToggle from "../DoneToggle";
 import DoneFooter from "../DoneFooter";
+import ReadyForSalesforceSwitch from "../ReadyForSalesforceSwitch";
 import MarkdownContent from "../MarkdownContent";
 import { buildDoneUpdate } from "../../utils/completion";
 import useResizableDrawer from "../../hooks/useResizableDrawer";
@@ -62,6 +63,9 @@ export default function SubtareaModal({
       description: updates.description !== undefined ? updates.description : description,
       dueDate: updates.dueDate !== undefined ? updates.dueDate : dueDate ? dueDate.toISOString() : null,
       assigneeEmail: updates.assigneeEmail !== undefined ? updates.assigneeEmail : assigneeEmail,
+      ...(updates.readyForSalesforce !== undefined
+        ? { readyForSalesforce: updates.readyForSalesforce }
+        : {}),
       ...doneFields,
     });
   };
@@ -294,6 +298,11 @@ export default function SubtareaModal({
         tareaKey={tareaKey}
         subtaskId={subtask.id}
         members={members}
+      />
+
+      <ReadyForSalesforceSwitch
+        value={!!subtask.readyForSalesforce}
+        onChange={(next) => handleSave({ readyForSalesforce: next })}
       />
 
       {/* Done footer */}
