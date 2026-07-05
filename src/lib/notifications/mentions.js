@@ -1,16 +1,12 @@
 const FRAGMENT_MAX = 50;
 
 const normalize = (value = "") =>
-  String(value)
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "");
+  String(value).trim().toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
 
 const memberCandidates = (member) => {
   const email = member.email || "";
   const localPart = email.includes("@") ? email.split("@")[0] : "";
-  return [...new Set([member.displayName, email, localPart].filter(Boolean))];
+  return [...new Set([email, localPart, member.uid].filter(Boolean))];
 };
 
 const isMentionBoundary = (char) => !char || /[\s,.!?;:\-]/.test(char);
@@ -30,7 +26,9 @@ export const buildMentionFragment = (text = "", mentionLabel = "") => {
   const start = Math.max(0, idx - 10);
   const end = Math.min(text.length, idx + needle.length + 30);
   const slice = text.slice(start, end).replace(/\s+/g, " ").trim();
-  return truncateFragment(`${start > 0 ? "…" : ""}${slice}${end < text.length ? "…" : ""}`);
+  return truncateFragment(
+    `${start > 0 ? "…" : ""}${slice}${end < text.length ? "…" : ""}`,
+  );
 };
 
 export const resolveMentionEmail = (mentionName, members = []) => {
@@ -107,9 +105,14 @@ export const extractMentionTargetsFromText = (text = "", members = []) => {
   return targets;
 };
 
-export const extractMentionTargetsFromComment = (comment = {}, members = []) => {
+export const extractMentionTargetsFromComment = (
+  comment = {},
+  members = [],
+) => {
   const text = comment.text || "";
-  const storedEmails = [...new Set((comment.mentionedEmails || []).filter(Boolean))];
+  const storedEmails = [
+    ...new Set((comment.mentionedEmails || []).filter(Boolean)),
+  ];
 
   const fromField = storedEmails.map((email) => {
     const member = members.find((m) => normalize(m.email) === normalize(email));
@@ -118,7 +121,8 @@ export const extractMentionTargetsFromComment = (comment = {}, members = []) => 
       email,
       uid: member?.uid || null,
       mentionLabel: label,
-      messageFragment: buildMentionFragment(text, label) || truncateFragment(text),
+      messageFragment:
+        buildMentionFragment(text, label) || truncateFragment(text),
     };
   });
 
@@ -133,13 +137,19 @@ export const extractMentionTargetsFromComment = (comment = {}, members = []) => 
   return [...merged.values()];
 };
 
-export const extractNewMentionTargets = (beforeText = "", afterText = "", members = []) => {
+export const extractNewMentionTargets = (
+  beforeText = "",
+  afterText = "",
+  members = [],
+) => {
   const beforeEmails = new Set(
-    extractMentionTargetsFromText(beforeText, members).map((t) => normalize(t.email))
+    extractMentionTargetsFromText(beforeText, members).map((t) =>
+      normalize(t.email),
+    ),
   );
 
   return extractMentionTargetsFromText(afterText, members).filter(
-    (target) => !beforeEmails.has(normalize(target.email))
+    (target) => !beforeEmails.has(normalize(target.email)),
   );
 };
 
