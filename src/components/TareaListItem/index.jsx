@@ -1,8 +1,10 @@
 import { useState, useContext } from "react";
-import { Draggable } from "react-beautiful-dnd";
+import { Draggable } from "@hello-pangea/dnd";
 import { CalendarOutlined, UserOutlined, MenuOutlined } from "@ant-design/icons";
-import { Avatar, DatePicker, Dropdown, Menu } from "antd";
+import { Avatar, DatePicker, Dropdown } from "antd";
 import moment from "moment";
+import dayjs from "dayjs";
+import { panelDayjs, toDayjs } from "../../utils/datePicker";
 import TareaModal from "../TareaModal";
 import DoneToggle from "../DoneToggle";
 import { UserContext } from "../../providers/UserProvider";
@@ -27,6 +29,7 @@ export default function TareaListItem({
 }) {
   const [showModal, setShowModal] = useState(false);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [pickerValue, setPickerValue] = useState(() => dayjs());
   const currentUser = useContext(UserContext);
 
   const {
@@ -57,6 +60,7 @@ export default function TareaListItem({
       tareaKey,
       tarea: { dueDate: date ? date.toISOString() : null },
     });
+    if (date) setPickerValue(panelDayjs(date));
     setDatePickerOpen(false);
   };
 
@@ -68,32 +72,30 @@ export default function TareaListItem({
     });
   };
 
-  const assigneeMenu = (
-    <Menu className="bg-ki-black border border-border-ki text-pearl-white">
-      {assigneeEmail && (
-        <Menu.Item key="clear" onClick={() => handleAssigneeSelect(null)}>
-          Sin responsable
-        </Menu.Item>
-      )}
-      {members?.map((member, i) => (
-        <Menu.Item key={i} onClick={() => handleAssigneeSelect(member.email)}>
-          <div className="flex items-center gap-2">
-            <Avatar
-              src={member.photoURL}
-              icon={!member.photoURL && <UserOutlined />}
-              size={20}
-              className="bg-ki-purple flex-shrink-0"
-            />
-            <span>{member.displayName || member.email}</span>
-          </div>
-        </Menu.Item>
-      ))}
-    </Menu>
-  );
+  const assigneeMenuItems = [
+    ...(assigneeEmail
+      ? [{ key: "clear", label: "Sin responsable", onClick: () => handleAssigneeSelect(null) }]
+      : []),
+    ...(members?.map((member, i) => ({
+      key: member.email || String(i),
+      label: (
+        <div className="flex items-center gap-2">
+          <Avatar
+            src={member.photoURL}
+            icon={!member.photoURL && <UserOutlined />}
+            size={20}
+            className="bg-ki-purple flex-shrink-0"
+          />
+          <span>{member.displayName || member.email}</span>
+        </div>
+      ),
+      onClick: () => handleAssigneeSelect(member.email),
+    })) || []),
+  ];
 
   return (
     <>
-      <Draggable draggableId={String(tareaKey)} index={index}>
+      <Draggable draggableId={String(tareaKey)} index={index} isDragDisabled={false}>
         {(provided, snapshot) => (
           <div
             ref={provided.innerRef}
@@ -142,17 +144,29 @@ export default function TareaListItem({
                 </button>
                 <DatePicker
                   open={datePickerOpen}
-                  onOpenChange={setDatePickerOpen}
-                  value={dueDateMoment}
+                  onOpenChange={(open) => {
+                    setDatePickerOpen(open);
+                    if (open) setPickerValue(panelDayjs(dueDate));
+                  }}
+                  defaultPickerValue={panelDayjs(dueDate)}
+                  pickerValue={pickerValue}
+                  onPickerValueChange={setPickerValue}
+                  value={toDayjs(dueDate)}
                   onChange={handleDateChange}
-                  format={(value) => (moment().isSame(value, "day") ? "Hoy" : value.format("DD MMM"))}
+                  format={(value) => (value && dayjs().isSame(value, "day") ? "Hoy" : value?.format("DD MMM"))}
                   allowClear
                   className="absolute opacity-0 pointer-events-none w-0 h-0 overflow-hidden"
-                  dropdownClassName="dark-datepicker"
+                  classNames={{ popup: { root: "dark-datepicker" } }}
                 />
               </div>
 
-              <Dropdown overlay={assigneeMenu} trigger={["click"]}>
+              <Dropdown
+                menu={{
+                  className: "bg-ki-black border border-border-ki text-pearl-white",
+                  items: assigneeMenuItems,
+                }}
+                trigger={["click"]}
+              >
                 {assignee ? (
                   <Avatar
                     src={assignee.photoURL}

@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { useContext } from "react";
 import { Button } from "antd";
 import { HomeOutlined, LogoutOutlined } from "@ant-design/icons";
@@ -20,7 +20,7 @@ export default function Nav() {
   return (
     <nav className="flex justify-between items-center px-4 py-3 border-b border-border-ki bg-ki-black">
       <div>
-        <Link to="/boards">
+        <Link href="/boards">
           <Button
             size="large"
             className="bg-transparent border-border-ki text-pearl-white hover:bg-transparent hover:border-ki-orange hover:text-ki-orange transition-colors flex items-center justify-center"
@@ -31,7 +31,7 @@ export default function Nav() {
 
       {member && (
         <div className="flex items-center gap-2">
-          <Link to="/account" title="Account" className="inline-flex rounded-full">
+          <Link href="/account" title="Account" className="inline-flex rounded-full">
             <MemberAvatar member={member} size={38} borderClass="border-border-ki" />
           </Link>
           <button

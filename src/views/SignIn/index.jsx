@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { auth } from "../../firebase";
-import { useHistory } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { GoogleOutlined, EyeOutlined, EyeInvisibleOutlined } from "@ant-design/icons";
 
 const ERROR_MESSAGES = {
@@ -17,7 +17,7 @@ const friendlyError = (code) =>
   ERROR_MESSAGES[code] ?? "Ocurrió un error. Intenta de nuevo.";
 
 export default function SignIn() {
-  const history = useHistory();
+  const router = useRouter();
   const [mode, setMode] = useState("login"); // "login" | "register"
   const [form, setForm] = useState({ displayName: "", email: "", password: "" });
   const [showPass, setShowPass] = useState(false);
@@ -52,7 +52,7 @@ export default function SignIn() {
           password: form.password,
         });
       }
-      history.push("/boards");
+      router.push("/boards");
     } catch (err) {
       const msg = friendlyError(err.code);
       if (msg) setError(msg);
@@ -66,7 +66,7 @@ export default function SignIn() {
     setLoading(true);
     try {
       await auth.doSignInWithGoogle();
-      history.push("/boards");
+      router.push("/boards");
     } catch (err) {
       const msg = friendlyError(err.code);
       if (msg) setError(msg);

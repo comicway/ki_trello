@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Menu, Dropdown, Button, Space, Input } from "antd";
+import { Dropdown, Button, Space, Input } from "antd";
 import { MoreOutlined } from "@ant-design/icons";
 
 export default function ListHeader(props) {
@@ -33,13 +33,17 @@ export default function ListHeader(props) {
     }
   };
 
-  const menu = (
-    <Menu className="bg-ki-black border border-border-ki text-pearl-white rounded-md">
-      <Menu.Item onClick={() => handleDeleteList(listKey)} className="hover:bg-alert-danger hover:text-pearl-white rounded">
-        Delete this list
-      </Menu.Item>
-    </Menu>
-  );
+  const listMenu = {
+    className: "bg-ki-black border border-border-ki text-pearl-white rounded-md",
+    items: [
+      {
+        key: "delete",
+        label: "Delete this list",
+        className: "hover:bg-alert-danger hover:text-pearl-white rounded",
+        onClick: () => handleDeleteList(listKey),
+      },
+    ],
+  };
 
   return (
     <div className="flex items-center justify-between text-lg mb-3 px-4 whitespace-normal">
@@ -78,7 +82,7 @@ export default function ListHeader(props) {
       <Space direction="vertical">
         <Space wrap>
           <Dropdown
-            overlay={menu}
+            menu={listMenu}
             trigger={["click"]}
             placement="bottomRight"
           >

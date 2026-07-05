@@ -1,7 +1,9 @@
 import { useState, useContext } from "react";
-import { DatePicker, Dropdown, Menu, Avatar } from "antd";
+import { DatePicker, Dropdown, Avatar } from "antd";
 import { CalendarOutlined, UserOutlined } from "@ant-design/icons";
 import moment from "moment";
+import dayjs from "dayjs";
+import { panelDayjs, toDayjs } from "../../utils/datePicker";
 import SubtareaModal from "../SubtareaModal";
 import DoneToggle from "../DoneToggle";
 import { UserContext } from "../../providers/UserProvider";
@@ -15,6 +17,7 @@ const dateLabel = (date) => {
 
 export default function Subtarea({ subtask, members, onUpdate, onDelete, boardKey, listKey, tareaKey }) {
   const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [pickerValue, setPickerValue] = useState(() => dayjs());
   const [panelOpen, setPanelOpen] = useState(false);
   const currentUser = useContext(UserContext);
 
@@ -24,6 +27,7 @@ export default function Subtarea({ subtask, members, onUpdate, onDelete, boardKe
 
   const handleDateChange = (date) => {
     onUpdate(subtask.id, { dueDate: date ? date.toISOString() : null });
+    if (date) setPickerValue(panelDayjs(date));
     setDatePickerOpen(false);
   };
 
@@ -31,28 +35,26 @@ export default function Subtarea({ subtask, members, onUpdate, onDelete, boardKe
     onUpdate(subtask.id, { assigneeEmail: email });
   };
 
-  const assigneeMenu = (
-    <Menu className="bg-ki-black border border-border-ki text-pearl-white">
-      {subtask.assigneeEmail && (
-        <Menu.Item key="clear" onClick={() => handleAssigneeSelect(null)}>
-          Sin responsable
-        </Menu.Item>
-      )}
-      {members?.map((member, i) => (
-        <Menu.Item key={i} onClick={() => handleAssigneeSelect(member.email)}>
-          <div className="flex items-center gap-2">
-            <Avatar
-              src={member.photoURL}
-              icon={!member.photoURL && <UserOutlined />}
-              size={20}
-              className="bg-ki-purple flex-shrink-0"
-            />
-            <span>{member.displayName || member.email}</span>
-          </div>
-        </Menu.Item>
-      ))}
-    </Menu>
-  );
+  const assigneeMenuItems = [
+    ...(subtask.assigneeEmail
+      ? [{ key: "clear", label: "Sin responsable", onClick: () => handleAssigneeSelect(null) }]
+      : []),
+    ...(members?.map((member, i) => ({
+      key: member.email || String(i),
+      label: (
+        <div className="flex items-center gap-2">
+          <Avatar
+            src={member.photoURL}
+            icon={!member.photoURL && <UserOutlined />}
+            size={20}
+            className="bg-ki-purple flex-shrink-0"
+          />
+          <span>{member.displayName || member.email}</span>
+        </div>
+      ),
+      onClick: () => handleAssigneeSelect(member.email),
+    })) || []),
+  ];
 
   return (
     <>
@@ -99,19 +101,31 @@ export default function Subtarea({ subtask, members, onUpdate, onDelete, boardKe
             </button>
             <DatePicker
               open={datePickerOpen}
-              onOpenChange={setDatePickerOpen}
-              value={dueDate}
+              onOpenChange={(open) => {
+                setDatePickerOpen(open);
+                if (open) setPickerValue(panelDayjs(subtask.dueDate));
+              }}
+              defaultPickerValue={panelDayjs(subtask.dueDate)}
+              pickerValue={pickerValue}
+              onPickerValueChange={setPickerValue}
+              value={toDayjs(dueDate)}
               onChange={handleDateChange}
-              format={(value) => (moment().isSame(value, "day") ? "hoy" : value.format("DD MMM"))}
+              format={(value) => (value && dayjs().isSame(value, "day") ? "hoy" : value?.format("DD MMM"))}
               allowClear
               className="absolute opacity-0 pointer-events-none w-0 h-0 overflow-hidden"
-              dropdownClassName="dark-datepicker"
+              classNames={{ popup: { root: "dark-datepicker" } }}
             />
           </div>
 
           {/* Responsable — derecha */}
           <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-            <Dropdown overlay={assigneeMenu} trigger={["click"]}>
+            <Dropdown
+              menu={{
+                className: "bg-ki-black border border-border-ki text-pearl-white",
+                items: assigneeMenuItems,
+              }}
+              trigger={["click"]}
+            >
               {assignee ? (
                 <Avatar
                   src={assignee.photoURL}

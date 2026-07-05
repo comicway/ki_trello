@@ -23,7 +23,7 @@ export default function CreateBoardModal(props) {
       title="Create board"
       width="320px"
       style={{ top: 60 }}
-      visible={visible}
+      open={visible}
       onCancel={onCloseModal}
       footer={null}
     >

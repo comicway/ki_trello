@@ -1,10 +1,11 @@
-import React from "react";
-import { Button } from "antd";
-
 export default function Loader() {
   return (
     <div className="absolute inset-0 text-center">
-      <Button shape="circle" loading className="mt-[100px]" />
+      <div
+        role="status"
+        aria-label="Loading"
+        className="mt-[100px] inline-block h-8 w-8 animate-spin rounded-full border-2 border-ki-purple border-t-transparent"
+      />
     </div>
   );
 }

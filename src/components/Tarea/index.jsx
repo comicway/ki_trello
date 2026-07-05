@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from "react";
-import { Draggable } from "react-beautiful-dnd";
+import { Draggable } from "@hello-pangea/dnd";
 import { Button, Input } from "antd";
 import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import TareaModal from "../TareaModal";

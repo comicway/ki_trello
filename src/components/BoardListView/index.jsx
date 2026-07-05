@@ -1,4 +1,4 @@
-import { DragDropContext, Droppable } from "react-beautiful-dnd";
+import { Droppable } from "@hello-pangea/dnd";
 import TareaListItem from "../TareaListItem";
 import CreateList from "../CreateList";
 import { listKeyMatches } from "../../utils/tareasState";
@@ -11,7 +11,6 @@ export default function BoardListView({
   handleEditTarea,
   handleMoveTareaManual,
   handleCreateList,
-  onDragEnd,
 }) {
   const normalizedTareas = lists.map((list) => {
     const entry = tareas.find((t) => listKeyMatches(t.listKey, list.key));
@@ -21,8 +20,7 @@ export default function BoardListView({
   const hasAnyTarea = normalizedTareas.some((listTareas) => listTareas.length > 0);
 
   return (
-    <DragDropContext onDragEnd={onDragEnd}>
-      <div className="flex-1 overflow-y-auto mx-4 my-2 pb-4">
+    <div className="flex-1 overflow-y-auto mx-4 my-2 pb-4">
         {lists.length === 0 && (
           <div className="flex items-center justify-center text-light-gray text-sm py-12">
             No hay listas en este board.
@@ -41,7 +39,7 @@ export default function BoardListView({
                 </h3>
               </div>
 
-              <Droppable droppableId={String(list.key)} type="tarea">
+              <Droppable droppableId={String(list.key)} type="tarea" isDropDisabled={false} isCombineEnabled={false} ignoreContainerClipping={true}>
                 {(provided, snapshot) => (
                   <div
                     ref={provided.innerRef}
@@ -91,6 +89,5 @@ export default function BoardListView({
           <CreateList handleCreateList={handleCreateList} vertical />
         </div>
       </div>
-    </DragDropContext>
   );
 }

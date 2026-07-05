@@ -11,6 +11,8 @@ import {
   UnorderedListOutlined,
 } from "@ant-design/icons";
 import moment from "moment";
+import dayjs from "dayjs";
+import { panelDayjs, toDayjs } from "../../utils/datePicker";
 import Subtarea from "../Subtarea";
 import Comments from "../Comments";
 import LinkPreviewList from "../LinkPreviewList";
@@ -61,6 +63,8 @@ export default function TareaModal(props) {
     handleMoveTareaManual,
   } = props;
 
+  const [pickerValue, setPickerValue] = useState(() => dayjs());
+
   useEffect(() => {
     setTitle(tareaTitle);
     setDescription(tareaDescription);
@@ -71,6 +75,7 @@ export default function TareaModal(props) {
     setDoneAt(tareaDoneAt || null);
     setDoneBy(tareaDoneBy || null);
     setReadyForSalesforce(!!tareaReadyForSalesforce);
+    setPickerValue(panelDayjs(tareaDueDate));
   }, [tareaTitle, tareaDescription, tareaDueDate, tareaAssigneeEmail, tareaSubtasks, tareaDone, tareaDoneAt, tareaDoneBy, tareaReadyForSalesforce]);
 
   const handleSave = (updates) => {
@@ -164,7 +169,9 @@ export default function TareaModal(props) {
   };
 
   const handleDateChange = (date) => {
-    setDueDate(date);
+    const next = date ? moment(date.toDate()) : null;
+    setDueDate(next);
+    setPickerValue(panelDayjs(date));
     handleSave({ dueDate: date ? date.toISOString() : null });
   };
 
@@ -198,7 +205,8 @@ export default function TareaModal(props) {
   };
 
   const customFormat = (value) => {
-    if (moment().isSame(value, "day")) return "Hoy";
+    if (!value) return "";
+    if (dayjs().isSame(value, "day")) return "Hoy";
     return value.format("DD MMM YYYY");
   };
 
@@ -214,9 +222,11 @@ export default function TareaModal(props) {
       width={drawerWidth}
       closable={false}
       onClose={handleClose}
-      visible={visible}
-      drawerStyle={{ backgroundColor: "#1d2125", color: "#b6c2cf" }}
-      bodyStyle={{ padding: "24px" }}
+      open={visible}
+      styles={{
+        content: { backgroundColor: "#1d2125", color: "#b6c2cf" },
+        body: { padding: "24px" },
+      }}
     >
       {/* Resize handle on the left edge */}
       <div
@@ -280,58 +290,59 @@ export default function TareaModal(props) {
         </button>
       </div>
 
-      {/* Responsable */}
-      {members && members.length > 0 && (
-        <div className="mb-6">
+      {/* Responsable + Estado */}
+      <div className="flex flex-row gap-2 mb-6">
+        {members && members.length > 0 && (
+          <div className="flex-1 min-w-0">
+            <h4 className="flex items-center gap-2 text-pearl-white font-semibold mb-3">
+              <UserOutlined />
+              <span>Responsable</span>
+            </h4>
+            <Select
+              value={assigneeEmail}
+              onChange={handleAssigneeChange}
+              placeholder="Sin responsable asignado"
+              allowClear
+              className="w-full"
+              styles={{ popup: { backgroundColor: "#22272b" } }}
+            >
+              {members.map((member, i) => (
+                <Option key={i} value={member.email}>
+                  <div className="flex items-center gap-2">
+                    <Avatar
+                      src={member.photoURL}
+                      icon={!member.photoURL && <UserOutlined />}
+                      size={20}
+                      className="bg-ki-purple flex-shrink-0"
+                    />
+                    <span>{member.displayName || member.email}</span>
+                  </div>
+                </Option>
+              ))}
+            </Select>
+          </div>
+        )}
+
+        <div className="flex-1 min-w-0">
           <h4 className="flex items-center gap-2 text-pearl-white font-semibold mb-3">
-            <UserOutlined />
-            <span>Responsable</span>
+            <SwapOutlined />
+            <span>Estado</span>
           </h4>
           <Select
-            value={assigneeEmail}
-            onChange={handleAssigneeChange}
-            placeholder="Sin responsable asignado"
-            allowClear
+            value={listKey}
+            onChange={handleStatusChange}
             className="w-full"
-            dropdownStyle={{ backgroundColor: "#22272b" }}
+            styles={{ popup: { backgroundColor: "#22272b" } }}
+            classNames={{ popup: { root: "dark-select-dropdown" } }}
           >
-            {members.map((member, i) => (
-              <Option key={i} value={member.email}>
-                <div className="flex items-center gap-2">
-                  <Avatar
-                    src={member.photoURL}
-                    icon={!member.photoURL && <UserOutlined />}
-                    size={20}
-                    className="bg-ki-purple flex-shrink-0"
-                  />
-                  <span>{member.displayName || member.email}</span>
-                </div>
-              </Option>
-            ))}
+            {lists &&
+              lists.map((list) => (
+                <Option key={list.key} value={list.key}>
+                  {list.title}
+                </Option>
+              ))}
           </Select>
         </div>
-      )}
-
-      {/* Status selector */}
-      <div className="mb-6">
-        <h4 className="flex items-center gap-2 text-pearl-white font-semibold mb-3">
-          <SwapOutlined />
-          <span>Estado</span>
-        </h4>
-        <Select
-          value={listKey}
-          onChange={handleStatusChange}
-          className="w-full"
-          dropdownStyle={{ backgroundColor: "#22272b" }}
-          dropdownClassName="dark-select-dropdown"
-        >
-          {lists &&
-            lists.map((list) => (
-              <Option key={list.key} value={list.key}>
-                {list.title}
-              </Option>
-            ))}
-        </Select>
       </div>
 
       {/* Due Date */}
@@ -341,13 +352,19 @@ export default function TareaModal(props) {
           <span>Fecha de entrega</span>
         </h4>
         <DatePicker
-          value={dueDate}
+          value={toDayjs(dueDate)}
+          defaultPickerValue={panelDayjs(dueDate)}
+          pickerValue={pickerValue}
+          onPickerValueChange={setPickerValue}
+          onOpenChange={(open) => {
+            if (open) setPickerValue(panelDayjs(dueDate));
+          }}
           onChange={handleDateChange}
           format={customFormat}
           placeholder="Sin fecha de entrega"
           allowClear
           className="w-full bg-ki-black text-pearl-white border-border-ki hover:border-ki-purple focus:border-ki-purple transition-colors h-10 px-3 cursor-pointer"
-          dropdownClassName="dark-datepicker"
+          classNames={{ popup: { root: "dark-datepicker" } }}
         />
       </div>
 
@@ -362,18 +379,11 @@ export default function TareaModal(props) {
             <form onSubmit={handleDescriptionSave}>
               <textarea
                 value={description}
-                onChange={(e) => {
-                  setDescription(e.target.value);
-                  e.target.style.height = "auto";
-                  e.target.style.height = e.target.scrollHeight + "px";
-                }}
-                ref={(el) => {
-                  if (el) { el.style.height = "auto"; el.style.height = el.scrollHeight + "px"; }
-                }}
+                onChange={(e) => setDescription(e.target.value)}
                 placeholder="Agrega una descripción más detallada..."
                 autoFocus
-                className="w-full bg-ki-black text-pearl-white border border-border-ki rounded px-3 py-2 text-sm resize-none outline-none hover:border-ki-purple focus:border-ki-purple transition-colors mb-3 overflow-hidden"
-                rows={1}
+                className="w-full min-h-[216px] bg-ki-black text-pearl-white border border-border-ki rounded px-3 py-2 text-sm resize-none outline-none hover:border-ki-purple focus:border-ki-purple transition-colors mb-3"
+                rows={9}
               />
               <div className="flex gap-2">
                 <button
@@ -397,7 +407,7 @@ export default function TareaModal(props) {
           ) : (
             <div
               onClick={() => setEditingDescription(true)}
-              className="bg-ki-black border border-border-ki rounded px-4 py-3 text-light-gray cursor-pointer hover:border-ki-purple transition-colors min-h-[60px]"
+              className="bg-ki-black border border-border-ki rounded px-4 py-3 text-light-gray cursor-pointer hover:border-ki-purple transition-colors min-h-[216px]"
             >
               {tareaDescription ? (
                 <MarkdownContent>{tareaDescription}</MarkdownContent>
