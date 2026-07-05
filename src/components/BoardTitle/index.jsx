@@ -62,7 +62,7 @@ export default function BoardTitle(props) {
 
   return (
     <>
-      <div className="flex justify-between px-4 py-2 bg-dark-blue overflow-hidden border-b border-border-ki">
+      <div className="flex justify-between px-4 py-2 bg-dark-blue overflow-hidden border-b border-border-ki relative z-10">
         <div className="flex-grow flex items-center gap-2 min-w-0">
           {editing ? (
             <form

@@ -28,13 +28,20 @@ const resolveActorEmails = (payload = {}) => {
   return emails;
 };
 
+export const collectMentionTargetEmails = (payload = {}) => {
+  const emails = [
+    ...(payload.parsedTargetEmails || []),
+    ...(payload.mentionedEmails || []),
+    ...(payload.comment?.mentionedEmails || []),
+    ...(payload.recipientEmail ? [payload.recipientEmail] : []),
+  ];
+
+  return [...new Set(emails.map(normalizeEmail).filter(Boolean))];
+};
+
 export const resolveMentionRecipients = (payload) => {
   const actorEmails = resolveActorEmails(payload);
-
-  return (payload.parsedTargetEmails || [])
-    .map(normalizeEmail)
-    .filter(Boolean)
-    .filter((email) => !actorEmails.has(email));
+  return collectMentionTargetEmails(payload).filter((email) => !actorEmails.has(email));
 };
 
 export const resolveNotificationRecipients = (payload) => {

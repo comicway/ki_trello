@@ -42,6 +42,20 @@ export async function dispatchNotification(payload) {
     throw new Error("boardId, eventType and idempotencyKey are required");
   }
 
+  const recipients = resolveNotificationRecipients(payload);
+  if (recipients.length === 0) {
+    if (eventType === "mention") {
+      console.info("mention_dispatch_no_recipients", {
+        idempotencyKey,
+        parsedTargetEmails: payload.parsedTargetEmails || [],
+        mentionedEmails: payload.mentionedEmails || payload.comment?.mentionedEmails || [],
+        actorEmail: payload.actorEmail || payload.authorEmail || null,
+      });
+      return { ok: true, skipped: true, reason: "no_recipients", idempotencyKey };
+    }
+    throw new Error("No recipients to notify");
+  }
+
   const claim = await claimNotificationDelivery(boardId, idempotencyKey, {
     eventType,
     boardId,
@@ -59,19 +73,6 @@ export async function dispatchNotification(payload) {
       console.info("mention_dispatch_duplicate", { idempotencyKey, boardId });
     }
     return { ok: true, skipped: true, duplicate: true, idempotencyKey };
-  }
-
-  const recipients = resolveNotificationRecipients(payload);
-  if (recipients.length === 0) {
-    if (eventType === "mention") {
-      console.info("mention_dispatch_no_recipients", {
-        idempotencyKey,
-        parsedTargetEmails: payload.parsedTargetEmails || [],
-        actorEmail: payload.actorEmail || payload.authorEmail || null,
-      });
-      return { ok: true, skipped: true, reason: "no_recipients", idempotencyKey };
-    }
-    throw new Error("No recipients to notify");
   }
 
   const appUrl = trimEnv(process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL);

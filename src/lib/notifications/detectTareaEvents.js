@@ -128,6 +128,8 @@ export const buildTareaEvents = (before, after, context) => {
         itemTitle: after.title || "Sin título",
         recipientEmail: target.email,
         recipientUid: target.uid || null,
+        parsedTargetEmails: [target.email],
+        mentionedEmails: [target.email],
         mentionSource: "description",
         messageFragment: target.messageFragment,
         actorName,
@@ -144,7 +146,13 @@ export const buildCommentEvents = (comment, context) => {
   if (!comment?.text && !hasMentions) return [];
 
   const targets = extractMentionTargetsFromComment(comment, context.members || []);
-  const parsedTargetEmails = targets.map((target) => target.email);
+  const storedEmails = (comment?.mentionedEmails || []).filter(Boolean);
+  const parsedTargetEmails = [
+    ...new Set([
+      ...targets.map((target) => target.email).filter(Boolean),
+      ...storedEmails,
+    ]),
+  ];
 
   if (parsedTargetEmails.length === 0) return [];
 
@@ -156,6 +164,7 @@ export const buildCommentEvents = (comment, context) => {
       subtaskId: context.subtaskId || null,
       itemTitle: context.itemTitle || "Sin título",
       parsedTargetEmails,
+      mentionedEmails: parsedTargetEmails,
       mentionSource: "comment",
       messageFragment:
         targets.map((target) => target.messageFragment).find(Boolean) ||
