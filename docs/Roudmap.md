@@ -14,3 +14,5 @@
 - [ ] Mejorar el Home, hacerlo practico enfocado a las necesidades del equipo CRM
 - [ ] Dashboard para ver las analiticas de las tareas
 - [ ] Realizar un QA manual de los estilos general
+
+Hello!
