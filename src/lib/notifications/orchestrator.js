@@ -1,5 +1,6 @@
 import { buildNotificationEmail } from "./buildEmail";
 import { claimNotificationDelivery } from "./idempotency";
+import { recordFeedEntries } from "./notificationFeed";
 import { resolveNotificationRecipients } from "./recipients";
 
 const trimEnv = (value) => value?.trim().replace(/^["']|["']$/g, "") || "";
@@ -45,14 +46,27 @@ export async function dispatchNotification(payload) {
     eventType,
     boardId,
     tareaId: payload.tareaId || null,
+    recipientEmail: payload.recipientEmail || null,
+    actorName: payload.actorName || payload.completedBy || null,
+    messageFragment: payload.messageFragment || null,
   });
 
   if (!claim.claimed) {
+    if (eventType === "mention") {
+      console.info("mention_dispatch_duplicate", { idempotencyKey, boardId });
+    }
     return { ok: true, skipped: true, duplicate: true, idempotencyKey };
   }
 
   const recipients = resolveNotificationRecipients(payload);
   if (recipients.length === 0) {
+    if (eventType === "mention") {
+      console.warn("mention_dispatch_no_recipients", {
+        idempotencyKey,
+        recipientEmail: payload.recipientEmail,
+        actorEmail: payload.actorEmail,
+      });
+    }
     throw new Error("No recipients to notify");
   }
 
@@ -71,6 +85,21 @@ export async function dispatchNotification(payload) {
       return { to, id: data?.id };
     })
   );
+
+  if (eventType === "mention") {
+    console.info("mention_dispatch_sent", {
+      idempotencyKey,
+      recipientEmail: payload.recipientEmail,
+      recipientUid: payload.recipientUid || null,
+      sent: results.length,
+    });
+  }
+
+  try {
+    await recordFeedEntries(recipients, payload);
+  } catch (error) {
+    console.error("notification_feed_write_error:", error.message);
+  }
 
   return { ok: true, skipped: false, sent: results.length, results, idempotencyKey };
 }

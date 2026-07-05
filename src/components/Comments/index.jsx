@@ -11,6 +11,7 @@ import {
 import moment from "moment";
 import { db } from "../../firebase";
 import { UserContext } from "../../providers/UserProvider";
+import { extractMentionTargetsFromText } from "../../lib/notifications/mentions";
 import MarkdownContent from "../MarkdownContent";
 
 // ─── URL helpers ──────────────────────────────────────────────────────────────
@@ -333,11 +334,13 @@ export default function Comments({ boardKey, listKey, tareaKey, subtaskId = null
   const handleSubmit = async () => {
     const trimmed = text.trim();
     if (!trimmed || !currentUser) return;
+    const mentionTargets = extractMentionTargetsFromText(trimmed, members || []);
     const comment = {
       text: trimmed,
       authorEmail: currentUser.email,
       authorName: currentUser.displayName || currentUser.email,
       authorPhoto: currentUser.photoURL || null,
+      mentionedEmails: mentionTargets.map((target) => target.email),
     };
     setSubmitting(true);
     try {

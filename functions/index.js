@@ -14,6 +14,18 @@ const resolveMemberEmails = (board = {}) => {
   return [...new Set([...fromField, ...fromMembers].filter(Boolean))];
 };
 
+const enrichMembers = (board = {}) => {
+  const members = [...(board.members || [])];
+  const known = new Set(members.map((m) => m.email).filter(Boolean));
+
+  resolveMemberEmails(board).forEach((email) => {
+    if (known.has(email)) return;
+    members.push({ email, displayName: email, uid: null, photoURL: null });
+  });
+
+  return members;
+};
+
 const postNotification = async (payload) => {
   const url = notificationWebhookUrl.value()?.trim();
   const secret = notificationWebhookSecret.value()?.trim();
@@ -53,7 +65,7 @@ const loadBoardListContext = async (boardId, listId) => {
     boardTitle: board.title || "Board",
     listTitle: list.title || "Lista",
     listIsFinalizado: list.title?.trim().toLowerCase() === "finalizado",
-    members: board.members || [],
+    members: enrichMembers(board),
     memberEmails: resolveMemberEmails(board),
     boardId,
     listId,
@@ -120,6 +132,28 @@ const handleCommentCreated = async ({ boardId, listId, tareaId, commentId, subta
     commentId,
     itemTitle,
   });
+
+  console.info("mention_comment_scan", {
+    boardId,
+    tareaId,
+    commentId,
+    subtaskId: subtaskId || null,
+    memberCount: context.members?.length || 0,
+    storedMentions: comment.mentionedEmails || [],
+    resolvedEvents: events.map((event) => ({
+      recipientEmail: event.recipientEmail,
+      recipientUid: event.recipientUid || null,
+    })),
+    eventCount: events.length,
+  });
+
+  if (events.length === 0) {
+    console.warn("mention_comment_no_targets", {
+      commentId,
+      textPreview: comment.text?.slice(0, 80) || "",
+    });
+    return;
+  }
 
   await dispatchEvents(events, { ...context, tareaId, subtaskId });
 };

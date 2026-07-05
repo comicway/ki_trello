@@ -8,14 +8,14 @@ const memberCandidates = (member) => {
   return [...new Set([member.displayName, email, localPart].filter(Boolean))];
 };
 
-export const truncateFragment = (text = "", max = FRAGMENT_MAX) => {
+const truncateFragment = (text = "", max = FRAGMENT_MAX) => {
   const clean = text.replace(/\s+/g, " ").trim();
   if (!clean) return "";
   if (clean.length <= max) return clean;
   return `${clean.slice(0, max - 1)}…`;
 };
 
-export const buildMentionFragment = (text = "", mentionLabel = "") => {
+const buildMentionFragment = (text = "", mentionLabel = "") => {
   if (!text) return "";
   const needle = `@${mentionLabel}`;
   const idx = text.toLowerCase().indexOf(needle.toLowerCase());
@@ -26,26 +26,7 @@ export const buildMentionFragment = (text = "", mentionLabel = "") => {
   return truncateFragment(`${start > 0 ? "…" : ""}${slice}${end < text.length ? "…" : ""}`);
 };
 
-export const resolveMentionEmail = (mentionName, members = []) => {
-  const normalized = normalize(mentionName);
-  if (!normalized) return null;
-
-  const match = members.find((member) => {
-    const email = normalize(member.email);
-    const displayName = normalize(member.displayName);
-    const localPart = email.includes("@") ? email.split("@")[0] : "";
-    return (
-      displayName === normalized ||
-      email === normalized ||
-      localPart === normalized ||
-      email.startsWith(`${normalized}@`)
-    );
-  });
-
-  return match?.email || null;
-};
-
-export const extractMentionTargetsFromText = (text = "", members = []) => {
+const extractMentionTargetsFromText = (text = "", members = []) => {
   if (!text || !members.length) return [];
 
   const targets = [];
@@ -100,7 +81,7 @@ export const extractMentionTargetsFromText = (text = "", members = []) => {
   return targets;
 };
 
-export const extractMentionTargetsFromComment = (comment = {}, members = []) => {
+const extractMentionTargetsFromComment = (comment = {}, members = []) => {
   const fromField = (comment.mentionedEmails || [])
     .filter(Boolean)
     .map((email) => {
@@ -118,7 +99,7 @@ export const extractMentionTargetsFromComment = (comment = {}, members = []) => 
   return extractMentionTargetsFromText(comment.text, members);
 };
 
-export const extractNewMentionTargets = (beforeText = "", afterText = "", members = []) => {
+const extractNewMentionTargets = (beforeText = "", afterText = "", members = []) => {
   const beforeEmails = new Set(
     extractMentionTargetsFromText(beforeText, members).map((t) => normalize(t.email))
   );
@@ -128,9 +109,8 @@ export const extractNewMentionTargets = (beforeText = "", afterText = "", member
   );
 };
 
-// Legacy exports
-export const extractMentions = (text = "") =>
-  extractMentionTargetsFromText(text, []).map((t) => t.mentionLabel);
-
-export const extractCommentMentionTargets = (text = "", members = []) =>
-  extractMentionTargetsFromText(text, members);
+module.exports = {
+  extractMentionTargetsFromComment,
+  extractMentionTargetsFromText,
+  extractNewMentionTargets,
+};
