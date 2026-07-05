@@ -1,6 +1,18 @@
+"use client";
+
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { UserOutlined, CheckCircleOutlined } from "@ant-design/icons";
 import MemberAvatar from "../MemberAvatar";
+
+const RecentNotifications = dynamic(() => import("../RecentNotifications"), {
+  ssr: false,
+  loading: () => (
+    <section className="bg-ki-black border border-border-ki rounded-lg p-4 mt-6">
+      <p className="text-light-gray text-sm italic">Cargando notificaciones…</p>
+    </section>
+  ),
+});
 
 export default function HomeDashboard({ myPendingTareas, membersWithPendingCounts, currentUserEmail }) {
   return (
@@ -72,6 +84,8 @@ export default function HomeDashboard({ myPendingTareas, membersWithPendingCount
           )}
         </section>
       </div>
+
+      <RecentNotifications />
     </div>
   );
 }

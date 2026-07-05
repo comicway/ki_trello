@@ -1,5 +1,8 @@
 import { EVENT_TYPES } from "./eventTypes";
-import { extractNewMentionTargets, extractCommentMentionTargets } from "./mentions";
+import {
+  extractMentionTargetsFromComment,
+  extractNewMentionTargets,
+} from "./mentions";
 
 const FINALIZADO = "finalizado";
 
@@ -123,6 +126,7 @@ export const buildTareaEvents = (before, after, context) => {
         itemType: "tarea",
         itemTitle: after.title || "Sin título",
         recipientEmail: target.email,
+        recipientUid: target.uid || null,
         mentionSource: "description",
         messageFragment: target.messageFragment,
         actorName,
@@ -137,18 +141,22 @@ export const buildTareaEvents = (before, after, context) => {
 export const buildCommentEvents = (comment, context) => {
   if (!comment?.text) return [];
 
-  const targets = extractCommentMentionTargets(comment.text, context.members || []);
+  const actorEmail = comment.authorEmail || null;
+  const targets = extractMentionTargetsFromComment(comment, context.members || []);
 
-  return targets.map((target) => ({
-    eventType: EVENT_TYPES.MENTION,
-    idempotencyKey: `mention:comment:${context.commentId}:${target.email}`,
-    itemType: context.subtaskId ? "subtask" : "tarea",
-    subtaskId: context.subtaskId || null,
-    itemTitle: context.itemTitle || "Sin título",
-    recipientEmail: target.email,
-    mentionSource: "comment",
-    messageFragment: target.messageFragment,
-    actorName: comment.authorName || comment.authorEmail || "Un miembro",
-    actorEmail: comment.authorEmail || null,
-  }));
+  return targets
+    .filter((target) => target.email?.toLowerCase() !== actorEmail?.toLowerCase())
+    .map((target) => ({
+      eventType: EVENT_TYPES.MENTION,
+      idempotencyKey: `mention:comment:${context.commentId}:${target.email}`,
+      itemType: context.subtaskId ? "subtask" : "tarea",
+      subtaskId: context.subtaskId || null,
+      itemTitle: context.itemTitle || "Sin título",
+      recipientEmail: target.email,
+      recipientUid: target.uid || null,
+      mentionSource: "comment",
+      messageFragment: target.messageFragment,
+      actorName: comment.authorName || comment.authorEmail || "Un miembro",
+      actorEmail,
+    }));
 };
