@@ -48,7 +48,10 @@ export async function dispatchNotification(payload) {
     tareaId: payload.tareaId || null,
     recipientEmail: payload.recipientEmail || null,
     actorName: payload.actorName || payload.completedBy || null,
-    messageFragment: payload.messageFragment || null,
+    actorEmail: payload.actorEmail || null,
+    messageFragment: buildFeedFragment(payload),
+    boardTitle: payload.boardTitle || null,
+    itemTitle: payload.itemTitle || null,
   });
 
   if (!claim.claimed) {
