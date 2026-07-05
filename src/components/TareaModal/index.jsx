@@ -108,6 +108,8 @@ export default function TareaModal(props) {
       doneBy: newDoneBy,
       readyForSalesforce:
         updates.readyForSalesforce !== undefined ? updates.readyForSalesforce : readyForSalesforce,
+      lastEditedBy: currentUser?.displayName || currentUser?.email || null,
+      lastEditedByEmail: currentUser?.email || null,
     };
     return handleEditTarea({ listKey, tareaKey, tarea: updatedTarea });
   };

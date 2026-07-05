@@ -477,14 +477,34 @@ export const doDeleteComment = async (boardKey, listKey, tareaKey, commentId, su
 };
 
 export const doMoveTarea = async (params) => {
-  const { boardKey, oldListKey, newListKey, tareaKey, tareas } = params;
+  const {
+    boardKey,
+    oldListKey,
+    newListKey,
+    tareaKey,
+    tareas,
+    changedBy,
+    fromListTitle,
+    toListTitle,
+  } = params;
   const batch = db.batch();
 
   const oldTareaRef = tareasColRef(boardKey, oldListKey).doc(tareaKey);
   const oldTareaSnap = await oldTareaRef.get();
-  const tareaData = oldTareaSnap.data();
+  const tareaData = oldTareaSnap.data() || {};
 
   batch.delete(oldTareaRef);
+
+  if (oldListKey !== newListKey) {
+    tareaData.lastStatusChange = {
+      fromListId: oldListKey,
+      toListId: newListKey,
+      fromListTitle: fromListTitle || "—",
+      toListTitle: toListTitle || "—",
+      changedAt: new Date().toISOString(),
+      changedBy: changedBy || null,
+    };
+  }
 
   const newListTareasRef = tareasColRef(boardKey, newListKey);
   tareas.forEach((tarea, index) => {
