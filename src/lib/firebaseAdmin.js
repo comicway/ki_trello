@@ -1,4 +1,6 @@
-import admin from "firebase-admin";
+import { cert, getApps, initializeApp } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
+import { getFirestore } from "firebase-admin/firestore";
 
 const trimEnv = (value) => value?.trim().replace(/^["']|["']$/g, "") || "";
 
@@ -18,16 +20,9 @@ const parseServiceAccount = () => {
   }
 };
 
-export const getFirebaseAdmin = () => {
-  if (admin.apps.length) return admin;
-
+const buildCredential = () => {
   const serviceAccount = parseServiceAccount();
-  if (serviceAccount) {
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
-    return admin;
-  }
+  if (serviceAccount) return cert(serviceAccount);
 
   const projectId =
     trimEnv(process.env.FIREBASE_PROJECT_ID) ||
@@ -41,14 +36,20 @@ export const getFirebaseAdmin = () => {
     );
   }
 
-  admin.initializeApp({
-    credential: admin.credential.cert({ projectId, clientEmail, privateKey }),
-  });
-
-  return admin;
+  return cert({ projectId, clientEmail, privateKey });
 };
 
+export const getFirebaseAdminApp = () => {
+  const existingApps = getApps();
+  if (existingApps.length > 0) return existingApps[0];
+
+  return initializeApp({ credential: buildCredential() });
+};
+
+export const getAdminAuth = () => getAuth(getFirebaseAdminApp());
+
+export const getAdminFirestore = () => getFirestore(getFirebaseAdminApp());
+
 export const verifyFirebaseIdToken = async (token) => {
-  const auth = getFirebaseAdmin().auth();
-  return auth.verifyIdToken(token);
+  return getAdminAuth().verifyIdToken(token);
 };
