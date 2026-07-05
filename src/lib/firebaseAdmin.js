@@ -1,8 +1,12 @@
 import { cert, getApps, initializeApp } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 
+const FIREBASE_JWKS_URL =
+  "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com";
+
 const trimEnv = (value) => value?.trim().replace(/^["']|["']$/g, "") || "";
+
+let remoteJwks;
 
 const parsePrivateKey = (raw) => {
   if (!raw) return undefined;
@@ -46,10 +50,34 @@ export const getFirebaseAdminApp = () => {
   return initializeApp({ credential: buildCredential() });
 };
 
-export const getAdminAuth = () => getAuth(getFirebaseAdminApp());
-
 export const getAdminFirestore = () => getFirestore(getFirebaseAdminApp());
 
+const getRemoteJwks = async () => {
+  if (!remoteJwks) {
+    const { createRemoteJWKSet } = await import("jose");
+    remoteJwks = createRemoteJWKSet(new URL(FIREBASE_JWKS_URL));
+  }
+  return remoteJwks;
+};
+
 export const verifyFirebaseIdToken = async (token) => {
-  return getAdminAuth().verifyIdToken(token);
+  const projectId =
+    trimEnv(process.env.FIREBASE_PROJECT_ID) ||
+    trimEnv(process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
+
+  if (!projectId) {
+    throw new Error("Firebase project ID is not configured");
+  }
+
+  const { jwtVerify } = await import("jose");
+  const { payload } = await jwtVerify(token, await getRemoteJwks(), {
+    issuer: `https://securetoken.google.com/${projectId}`,
+    audience: projectId,
+  });
+
+  if (!payload.email) {
+    throw new Error("Token has no email claim");
+  }
+
+  return payload;
 };

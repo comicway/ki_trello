@@ -25,7 +25,7 @@ const nextConfig = {
       { protocol: "https", hostname: "firebasestorage.googleapis.com" },
     ],
   },
-  serverExternalPackages: ["firebase-admin"],
+  serverExternalPackages: ["firebase-admin", "jose"],
   experimental: {
     optimizePackageImports: ["antd", "@ant-design/icons"],
   },
