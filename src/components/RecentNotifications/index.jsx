@@ -11,19 +11,27 @@ export default function RecentNotifications() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (!auth) {
+      setLoading(false);
+      return undefined;
+    }
+
     let cancelled = false;
 
-    const load = async () => {
-      const user = auth?.currentUser;
+    const load = async (user) => {
       if (!user) {
+        setItems([]);
         setLoading(false);
         return;
       }
+
+      setLoading(true);
 
       try {
         const token = await user.getIdToken();
         const response = await fetch("/api/notifications?limit=10", {
           headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
         });
         const body = await response.json().catch(() => ({}));
 
@@ -46,9 +54,13 @@ export default function RecentNotifications() {
       }
     };
 
-    load();
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      load(user);
+    });
+
     return () => {
       cancelled = true;
+      unsubscribe();
     };
   }, []);
 

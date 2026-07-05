@@ -12,6 +12,7 @@ import moment from "moment";
 import { db } from "../../firebase";
 import { UserContext } from "../../providers/UserProvider";
 import { extractMentionTargetsFromText } from "../../lib/notifications/mentions";
+import { requestCommentMentionNotifications } from "../../lib/notifications/requestCommentMentionNotifications";
 import MarkdownContent from "../MarkdownContent";
 
 // ─── URL helpers ──────────────────────────────────────────────────────────────
@@ -347,6 +348,16 @@ export default function Comments({ boardKey, listKey, tareaKey, subtaskId = null
       const saved = await db.doAddComment(boardKey, listKey, tareaKey, comment, subtaskId);
       setComments((prev) => [...prev, saved]);
       setText("");
+
+      if (mentionTargets.length > 0) {
+        requestCommentMentionNotifications({
+          boardId: boardKey,
+          listId: listKey,
+          tareaId: tareaKey,
+          commentId: saved.id,
+          subtaskId,
+        });
+      }
     } catch (err) {
       console.error("Error al guardar comentario:", err);
     } finally {

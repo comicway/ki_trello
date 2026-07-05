@@ -22,7 +22,7 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "10", 10), 1), 50);
 
-    const notifications = await listUserNotifications(decoded.uid, limit);
+    const notifications = await listUserNotifications(decoded.email, decoded.uid, limit);
 
     return NextResponse.json({ ok: true, notifications });
   } catch (error) {
