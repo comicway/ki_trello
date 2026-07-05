@@ -1,12 +1,19 @@
 const FRAGMENT_MAX = 50;
 
-const normalize = (value = "") => value.trim().toLowerCase();
+const normalize = (value = "") =>
+  String(value)
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "");
 
 const memberCandidates = (member) => {
   const email = member.email || "";
   const localPart = email.includes("@") ? email.split("@")[0] : "";
   return [...new Set([member.displayName, email, localPart].filter(Boolean))];
 };
+
+const isMentionBoundary = (char) => !char || /[\s,.!?;:\-]/.test(char);
 
 const truncateFragment = (text = "", max = FRAGMENT_MAX) => {
   const clean = text.replace(/\s+/g, " ").trim();
@@ -47,11 +54,11 @@ const extractMentionTargetsFromText = (text = "", members = []) => {
 
       for (const candidate of memberCandidates(member)) {
         const candidateNorm = normalize(candidate);
-        const sliceNorm = slice.toLowerCase();
+        const sliceNorm = normalize(slice);
         if (!sliceNorm.startsWith(candidateNorm)) continue;
 
         const nextChar = slice[candidate.length];
-        if (nextChar && !/[\s,.!?;:]/.test(nextChar)) continue;
+        if (!isMentionBoundary(nextChar)) continue;
 
         if (!best || candidate.length > best.label.length) {
           best = { member, label: candidate, length: candidate.length };
@@ -82,21 +89,29 @@ const extractMentionTargetsFromText = (text = "", members = []) => {
 };
 
 const extractMentionTargetsFromComment = (comment = {}, members = []) => {
-  const fromField = (comment.mentionedEmails || [])
-    .filter(Boolean)
-    .map((email) => {
-      const member = members.find((m) => normalize(m.email) === normalize(email));
-      const label = member?.displayName || email;
-      return {
-        email,
-        uid: member?.uid || null,
-        mentionLabel: label,
-        messageFragment: buildMentionFragment(comment.text, label) || truncateFragment(comment.text),
-      };
-    });
+  const text = comment.text || "";
+  const storedEmails = [...new Set((comment.mentionedEmails || []).filter(Boolean))];
 
-  if (fromField.length > 0) return fromField;
-  return extractMentionTargetsFromText(comment.text, members);
+  const fromField = storedEmails.map((email) => {
+    const member = members.find((m) => normalize(m.email) === normalize(email));
+    const label = member?.displayName || email;
+    return {
+      email,
+      uid: member?.uid || null,
+      mentionLabel: label,
+      messageFragment: buildMentionFragment(text, label) || truncateFragment(text),
+    };
+  });
+
+  const fromText = extractMentionTargetsFromText(text, members);
+  const merged = new Map();
+
+  [...fromField, ...fromText].forEach((target) => {
+    if (!target?.email) return;
+    merged.set(normalize(target.email), target);
+  });
+
+  return [...merged.values()];
 };
 
 const extractNewMentionTargets = (beforeText = "", afterText = "", members = []) => {

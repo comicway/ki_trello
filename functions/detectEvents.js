@@ -146,7 +146,8 @@ const buildTareaEvents = (before, after, context) => {
 };
 
 const buildCommentEvents = (comment, context) => {
-  if (!comment?.text) return [];
+  const hasMentions = (comment?.mentionedEmails || []).length > 0;
+  if (!comment?.text && !hasMentions) return [];
 
   const actorEmail = comment.authorEmail || null;
   const targets = extractMentionTargetsFromComment(comment, context.members || []);

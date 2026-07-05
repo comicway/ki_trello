@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { verifyFirebaseIdToken, getAdminFirestore } from "@/lib/firebaseAdmin";
 import { assertBoardMember, resolveMemberEmails } from "@/lib/notifications/loadNotificationContext";
 import { buildCommentEvents } from "@/lib/notifications/detectTareaEvents";
+import { extractMentionTargetsFromComment } from "@/lib/notifications/mentions";
 import { dispatchNotification } from "@/lib/notifications/orchestrator";
 
 export const runtime = "nodejs";
@@ -13,7 +14,7 @@ const getBearerToken = (request) => {
   return header.slice(7).trim();
 };
 
-const loadCommentContext = async ({ boardId, listId, tareaId, commentId, subtaskId }) => {
+const loadCommentContext = async ({ boardId, listId, tareaId, commentId, subtaskId, clientMentions = [] }) => {
   const db = getAdminFirestore();
   const commentRef = subtaskId
     ? db.doc(
@@ -35,7 +36,14 @@ const loadCommentContext = async ({ boardId, listId, tareaId, commentId, subtask
   const board = boardSnap.data();
   const list = listSnap.data();
   const tarea = tareaSnap.data();
-  const comment = commentSnap.data();
+  const stored = commentSnap.data();
+
+  const comment = {
+    ...stored,
+    mentionedEmails: [
+      ...new Set([...(stored.mentionedEmails || []), ...clientMentions].filter(Boolean)),
+    ],
+  };
 
   let itemTitle = tarea.title || "Sin título";
   if (subtaskId) {
@@ -47,7 +55,7 @@ const loadCommentContext = async ({ boardId, listId, tareaId, commentId, subtask
   const memberEmails = resolveMemberEmails(board);
 
   memberEmails.forEach((email) => {
-    if (members.some((m) => m.email === email)) return;
+    if (members.some((m) => m.email?.toLowerCase() === email.toLowerCase())) return;
     members.push({ email, displayName: email, uid: null, photoURL: null });
   });
 
@@ -75,7 +83,14 @@ export async function POST(request) {
 
     const decoded = await verifyFirebaseIdToken(token);
     const body = await request.json();
-    const { boardId, listId, tareaId, commentId, subtaskId = null } = body;
+    const {
+      boardId,
+      listId,
+      tareaId,
+      commentId,
+      subtaskId = null,
+      mentionedEmails = [],
+    } = body;
 
     if (!boardId || !listId || !tareaId || !commentId) {
       return NextResponse.json({ error: "Missing comment identifiers" }, { status: 400 });
@@ -83,11 +98,46 @@ export async function POST(request) {
 
     await assertBoardMember(boardId, decoded.email);
 
-    const context = await loadCommentContext({ boardId, listId, tareaId, commentId, subtaskId });
+    const context = await loadCommentContext({
+      boardId,
+      listId,
+      tareaId,
+      commentId,
+      subtaskId,
+      clientMentions: mentionedEmails,
+    });
+
+    const parsedTargets = extractMentionTargetsFromComment(context.comment, context.members);
+
+    console.info("mention_parser_debug", {
+      commentId,
+      textPreview: context.comment.text?.slice(0, 120) || "",
+      storedMentions: context.comment.mentionedEmails || [],
+      clientMentions: mentionedEmails,
+      memberCount: context.members.length,
+      parsedTargets: parsedTargets.map((t) => t.email),
+      authorEmail: context.comment.authorEmail || null,
+    });
+
     const events = buildCommentEvents(context.comment, context);
 
+    console.info("mention_events_debug", {
+      commentId,
+      eventCount: events.length,
+      recipients: events.map((e) => e.recipientEmail),
+    });
+
     if (events.length === 0) {
-      return NextResponse.json({ ok: true, sent: 0, skipped: true, reason: "no_mentions" });
+      return NextResponse.json({
+        ok: true,
+        sent: 0,
+        skipped: true,
+        reason: "no_mentions",
+        debug: {
+          storedMentions: context.comment.mentionedEmails || [],
+          parsedTargets: parsedTargets.map((t) => t.email),
+        },
+      });
     }
 
     const results = await Promise.all(

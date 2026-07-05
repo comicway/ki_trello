@@ -356,6 +356,7 @@ export default function Comments({ boardKey, listKey, tareaKey, subtaskId = null
           tareaId: tareaKey,
           commentId: saved.id,
           subtaskId,
+          mentionedEmails: mentionTargets.map((target) => target.email),
         });
       }
     } catch (err) {

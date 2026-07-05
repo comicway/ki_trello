@@ -6,9 +6,10 @@ export async function requestCommentMentionNotifications({
   tareaId,
   commentId,
   subtaskId = null,
+  mentionedEmails = [],
 }) {
   const user = auth?.currentUser;
-  if (!user) return;
+  if (!user || !mentionedEmails.length) return;
 
   try {
     const token = await user.getIdToken();
@@ -18,7 +19,14 @@ export async function requestCommentMentionNotifications({
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ boardId, listId, tareaId, commentId, subtaskId }),
+      body: JSON.stringify({
+        boardId,
+        listId,
+        tareaId,
+        commentId,
+        subtaskId,
+        mentionedEmails,
+      }),
     });
 
     const body = await response.json().catch(() => ({}));
