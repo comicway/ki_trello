@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import { DragDropContext, Droppable } from "react-beautiful-dnd";
+import { useEffect, useState, useMemo } from "react";
+import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 import { getBoardKey } from "../../utils/index";
-import { useHistory } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { db } from "../../firebase";
 import List from "../../components/List";
 import CreateList from "../../components/CreateList";
@@ -13,7 +13,7 @@ import { ensureTareasForLists, getListTareasIndex } from "../../utils/tareasStat
 
 const VIEW_MODES = { BOARD: "board", LIST: "list" };
 
-export default function Board() {
+export default function Board({ boardId }) {
   const [lists, setLists] = useState([]);
   const [tareas, setTareas] = useState([]);
   const [board, setBoard] = useState({});
@@ -23,11 +23,11 @@ export default function Board() {
   const [dataFetched, setDataFetched] = useState(false);
   const [focusTareaKey, setFocusTareaKey] = useState(null);
   const [viewMode, setViewMode] = useState(VIEW_MODES.BOARD);
-  const history = useHistory();
+  const router = useRouter();
 
   useEffect(() => {
     setLoading(true);
-    const bKey = getBoardKey();
+    const bKey = getBoardKey(boardId);
     // Reclamar membresía si el usuario fue invitado por email
     db.doClaimMembership().catch(console.error);
     Promise.all([db.onceGetBoard(bKey), db.onceGetLists(bKey), db.onceGetMembers(bKey)])
@@ -44,7 +44,7 @@ export default function Board() {
         setDataFetched(false);
         console.error(error);
       });
-  }, []);
+  }, [boardId]);
 
   useEffect(() => {
     if (dataFetched) {
@@ -52,17 +52,31 @@ export default function Board() {
     }
   }, [dataFetched]);
 
+  const listKeysSignature = useMemo(
+    () => lists.map((list) => list.key).join("|"),
+    [lists]
+  );
+
   useEffect(() => {
     if (viewMode !== VIEW_MODES.LIST || !boardKey || lists.length === 0) return;
-    Promise.all(lists.map((list) => db.onceGetTarea(boardKey, list.key))).then((results) => {
-      setTareas(
-        lists.map((list, i) => ({
-          listKey: list.key,
-          tareas: results[i] || [],
-        }))
-      );
-    }).catch(console.error);
-  }, [viewMode, boardKey, lists]);
+
+    let cancelled = false;
+    Promise.all(lists.map((list) => db.onceGetTarea(boardKey, list.key)))
+      .then((results) => {
+        if (cancelled) return;
+        setTareas(
+          lists.map((list, i) => ({
+            listKey: list.key,
+            tareas: results[i] || [],
+          }))
+        );
+      })
+      .catch(console.error);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [viewMode, boardKey, listKeysSignature]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleQuickAddTarea = () => {
     if (lists.length === 0) return;
@@ -199,7 +213,7 @@ export default function Board() {
 
   const handleDeleteBoard = (bKey) => {
     return db.doDeleteBoard(bKey).then(() => {
-      history.push("/boards");
+      router.push("/boards");
     });
   };
 
@@ -319,6 +333,7 @@ export default function Board() {
             </button>
           </div>
 
+          <DragDropContext onDragEnd={handleOnDragEnd} key={viewMode}>
           {viewMode === VIEW_MODES.LIST ? (
             <BoardListView
               lists={lists}
@@ -328,15 +343,16 @@ export default function Board() {
               handleEditTarea={handleEditTarea}
               handleMoveTareaManual={handleMoveTareaManual}
               handleCreateList={handleCreateList}
-              onDragEnd={handleOnDragEnd}
             />
           ) : (
-          <DragDropContext onDragEnd={handleOnDragEnd}>
-            <div className="flex-1 overflow-auto whitespace-nowrap mb-2 pl-2 pr-1 flex">
+          <div className="flex-1 overflow-auto whitespace-nowrap mb-2 pl-2 pr-1 flex">
               <Droppable
                 droppableId="all-lists"
                 direction="horizontal"
                 type="list"
+                isDropDisabled={false}
+                isCombineEnabled={false}
+                ignoreContainerClipping={false}
               >
                 {(provided) => (
                   <div
@@ -382,8 +398,8 @@ export default function Board() {
                 <CreateList handleCreateList={handleCreateList} />
               </div>
             </div>
-          </DragDropContext>
           )}
+          </DragDropContext>
         </div>
       )}
     </>

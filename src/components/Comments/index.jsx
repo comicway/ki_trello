@@ -109,6 +109,7 @@ const insertMention = (value, cursorPos, name) => {
 function MentionTextarea({ value, onChange, onSubmit, members, placeholder }) {
   const [mentionQuery, setMentionQuery] = useState(null);
   const [menuIndex, setMenuIndex] = useState(0);
+  const [isExpanded, setIsExpanded] = useState(false);
   const textareaRef = useRef(null);
 
   const filtered =
@@ -151,8 +152,10 @@ function MentionTextarea({ value, onChange, onSubmit, members, placeholder }) {
         value={value}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
+        onFocus={() => setIsExpanded(true)}
+        onBlur={() => setIsExpanded(false)}
         placeholder={placeholder}
-        rows={2}
+        rows={isExpanded ? 4 : 2}
         className="w-full bg-ki-black text-pearl-white border border-border-ki hover:border-ki-purple focus:border-ki-purple rounded px-3 py-2 text-sm resize-none outline-none transition-colors"
       />
       {filtered.length > 0 && (

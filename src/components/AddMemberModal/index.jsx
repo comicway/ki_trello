@@ -141,7 +141,7 @@ export default function AddMemberModal({
 
   return (
     <Modal
-      visible={visible}
+      open={visible}
       onCancel={onClose}
       footer={null}
       title={

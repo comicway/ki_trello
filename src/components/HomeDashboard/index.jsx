@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { UserOutlined, CheckCircleOutlined } from "@ant-design/icons";
 import MemberAvatar from "../MemberAvatar";
 
@@ -19,7 +19,7 @@ export default function HomeDashboard({ myPendingTareas, membersWithPendingCount
               {myPendingTareas.map((t) => (
                 <li key={`${t.boardKey}-${t.tareaKey}-${t.subtaskId || "main"}`}>
                   <Link
-                    to={{ pathname: `/b/${t.boardKey}`, state: { boardKey: t.boardKey } }}
+                    href={`/b/${t.boardKey}`}
                     className="block px-3 py-2 rounded-md bg-dark-blue border border-border-ki hover:border-ki-purple transition-colors"
                   >
                     <p className="text-pearl-white text-sm font-medium truncate">

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Droppable, Draggable } from "react-beautiful-dnd";
+import { Droppable, Draggable } from "@hello-pangea/dnd";
 import { db } from "../../firebase";
 import CreateTarea from "../CreateTarea";
 import ListHeader from "./ListHeader";
@@ -47,7 +47,7 @@ export default function List(props) {
   };
 
   return (
-    <Draggable key={listKey} draggableId={String(listKey)} index={index}>
+    <Draggable key={listKey} draggableId={String(listKey)} index={index} isDragDisabled={false}>
       {(provided) => (
         <div
           className="w-[292px] mx-1 py-4 box-border inline-block align-top whitespace-nowrap bg-ki-black border border-border-ki rounded-md"
@@ -64,7 +64,7 @@ export default function List(props) {
           />
           <div className="rounded box-border flex flex-col max-h-full relative whitespace-normal">
             <div className="px-4 flex-auto mb-0 overflow-y-auto overflow-x-hidden z-[1] min-h-0">
-              <Droppable droppableId={String(listKey)} type="tarea">
+              <Droppable droppableId={String(listKey)} type="tarea" isDropDisabled={false} isCombineEnabled={false} ignoreContainerClipping={false}>
                 {(provided) => (
                   <div {...provided.droppableProps} ref={provided.innerRef}>
                     {tareas &&

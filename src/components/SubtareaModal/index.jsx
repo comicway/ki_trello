@@ -8,6 +8,8 @@ import {
   UserOutlined,
 } from "@ant-design/icons";
 import moment from "moment";
+import dayjs from "dayjs";
+import { panelDayjs, toDayjs } from "../../utils/datePicker";
 import Comments from "../Comments";
 import LinkPreviewList from "../LinkPreviewList";
 import DoneToggle from "../DoneToggle";
@@ -37,6 +39,7 @@ export default function SubtareaModal({
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState(null);
   const [assigneeEmail, setAssigneeEmail] = useState(null);
+  const [pickerValue, setPickerValue] = useState(() => dayjs());
   const [drawerWidth, handleResizeMouseDown] = useResizableDrawer(520);
   const currentUser = useContext(UserContext);
 
@@ -46,6 +49,7 @@ export default function SubtareaModal({
     setDescription(subtask.description || "");
     setDueDate(subtask.dueDate ? moment(subtask.dueDate) : null);
     setAssigneeEmail(subtask.assigneeEmail || null);
+    setPickerValue(panelDayjs(subtask.dueDate));
   }, [subtask]);
 
   if (!subtask) return null;
@@ -90,7 +94,9 @@ export default function SubtareaModal({
   };
 
   const handleDateChange = (date) => {
-    setDueDate(date);
+    const next = date ? moment(date.toDate()) : null;
+    setDueDate(next);
+    setPickerValue(panelDayjs(date));
     handleSave({ dueDate: date ? date.toISOString() : null });
   };
 
@@ -100,7 +106,8 @@ export default function SubtareaModal({
   };
 
   const customFormat = (value) => {
-    if (moment().isSame(value, "day")) return "hoy";
+    if (!value) return "";
+    if (dayjs().isSame(value, "day")) return "hoy";
     return value.format("DD MMM");
   };
 
@@ -116,9 +123,11 @@ export default function SubtareaModal({
       width={drawerWidth}
       closable={false}
       onClose={handleClose}
-      visible={visible}
-      drawerStyle={{ backgroundColor: "#1d2125", color: "#b6c2cf" }}
-      bodyStyle={{ padding: "24px" }}
+      open={visible}
+      styles={{
+        content: { backgroundColor: "#1d2125", color: "#b6c2cf" },
+        body: { padding: "24px" },
+      }}
       zIndex={1001}
     >
       {/* Resize handle */}
@@ -183,7 +192,7 @@ export default function SubtareaModal({
             placeholder="Sin responsable asignado"
             allowClear
             className="w-full"
-            dropdownStyle={{ backgroundColor: "#22272b" }}
+            styles={{ popup: { backgroundColor: "#22272b" } }}
           >
             {members.map((member, i) => (
               <Option key={i} value={member.email}>
@@ -208,13 +217,19 @@ export default function SubtareaModal({
           <span>Fecha de entrega</span>
         </h4>
         <DatePicker
-          value={dueDate}
+          value={toDayjs(dueDate)}
+          defaultPickerValue={panelDayjs(dueDate)}
+          pickerValue={pickerValue}
+          onPickerValueChange={setPickerValue}
+          onOpenChange={(open) => {
+            if (open) setPickerValue(panelDayjs(dueDate));
+          }}
           onChange={handleDateChange}
           format={customFormat}
           placeholder="Sin fecha de entrega"
           allowClear
           className="w-full bg-ki-black text-pearl-white border-border-ki hover:border-ki-purple focus:border-ki-purple transition-colors h-10 px-3 cursor-pointer"
-          dropdownClassName="dark-datepicker"
+          classNames={{ popup: { root: "dark-datepicker" } }}
         />
       </div>
 
@@ -227,18 +242,11 @@ export default function SubtareaModal({
           <form onSubmit={handleDescriptionSave}>
             <textarea
               value={description}
-              onChange={(e) => {
-                setDescription(e.target.value);
-                e.target.style.height = "auto";
-                e.target.style.height = e.target.scrollHeight + "px";
-              }}
-              ref={(el) => {
-                if (el) { el.style.height = "auto"; el.style.height = el.scrollHeight + "px"; }
-              }}
+              onChange={(e) => setDescription(e.target.value)}
               placeholder="Agrega una descripción más detallada..."
               autoFocus
-              className="w-full bg-ki-black text-pearl-white border border-border-ki rounded px-3 py-2 text-sm resize-none outline-none hover:border-ki-purple focus:border-ki-purple transition-colors mb-3 overflow-hidden"
-              rows={1}
+              className="w-full min-h-[216px] bg-ki-black text-pearl-white border border-border-ki rounded px-3 py-2 text-sm resize-none outline-none hover:border-ki-purple focus:border-ki-purple transition-colors mb-3"
+              rows={9}
             />
             <div className="flex gap-2">
               <button
@@ -262,7 +270,7 @@ export default function SubtareaModal({
         ) : (
           <div
             onClick={() => setEditingDescription(true)}
-            className="bg-ki-black border border-border-ki rounded px-4 py-3 text-light-gray cursor-pointer hover:border-ki-purple transition-colors min-h-[60px]"
+            className="bg-ki-black border border-border-ki rounded px-4 py-3 text-light-gray cursor-pointer hover:border-ki-purple transition-colors min-h-[216px]"
           >
             {description ? (
               <MarkdownContent>{description}</MarkdownContent>
