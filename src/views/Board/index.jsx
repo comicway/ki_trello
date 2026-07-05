@@ -10,6 +10,7 @@ import BoardTitle from "../../components/BoardTitle";
 import BoardListView from "../../components/BoardListView";
 import { getOwnerIds } from "../../utils/boardRoles";
 import { ensureTareasForLists, getListTareasIndex } from "../../utils/tareasState";
+import { requestTaskCompletedNotification } from "../../lib/notifications/requestTaskCompletedNotification";
 
 const VIEW_MODES = { BOARD: "board", LIST: "list" };
 
@@ -135,19 +136,55 @@ export default function Board({ boardId }) {
       .catch(console.error);
   };
 
+  const notifyIfFinalized = (listKey, tareaKey, tareaUpdate, prevTarea) => {
+    if (tareaUpdate.done === true && !prevTarea?.done) {
+      requestTaskCompletedNotification({
+        boardId: boardKey,
+        listId: listKey,
+        tareaId: tareaKey,
+        itemType: "tarea",
+      });
+      return;
+    }
+
+    if (!tareaUpdate.subtasks) return;
+
+    const prevMap = new Map((prevTarea?.subtasks || []).map((s) => [s.id, s]));
+    tareaUpdate.subtasks.forEach((sub) => {
+      if (sub.done && !prevMap.get(sub.id)?.done) {
+        requestTaskCompletedNotification({
+          boardId: boardKey,
+          listId: listKey,
+          tareaId: tareaKey,
+          itemType: "subtask",
+          subtaskId: sub.id,
+        });
+      }
+    });
+  };
+
   const handleEditTarea = (params) => {
     const { listKey, tareaKey, tarea } = params;
+    const listIndex = tareas.findIndex((c) => c.listKey === listKey);
+    const prevTarea = listIndex !== -1
+      ? tareas[listIndex].tareas.find((c) => c.key === tareaKey)
+      : null;
+
     return db.doEditTarea(boardKey, listKey, tareaKey, tarea).then(() => {
+      if (listIndex === -1) return;
+
       const updatedTareas = [...tareas];
-      const listIndex = updatedTareas.findIndex((c) => c.listKey === listKey);
       const tareaIndex = updatedTareas[listIndex].tareas.findIndex(
         (c) => c.key === tareaKey
       );
+      if (tareaIndex === -1) return;
+
       updatedTareas[listIndex].tareas[tareaIndex] = {
         ...updatedTareas[listIndex].tareas[tareaIndex],
         ...tarea,
       };
       setTareas(updatedTareas);
+      notifyIfFinalized(listKey, tareaKey, tarea, prevTarea);
     });
   };
 

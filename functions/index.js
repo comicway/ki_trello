@@ -8,13 +8,18 @@ admin.initializeApp();
 const notificationWebhookUrl = defineSecret("NOTIFICATION_WEBHOOK_URL");
 const notificationWebhookSecret = defineSecret("NOTIFICATION_WEBHOOK_SECRET");
 
+const resolveMemberEmails = (board = {}) => {
+  const fromField = board.memberEmails || [];
+  const fromMembers = (board.members || []).map((m) => m.email).filter(Boolean);
+  return [...new Set([...fromField, ...fromMembers].filter(Boolean))];
+};
+
 const postNotification = async (payload) => {
-  const url = notificationWebhookUrl.value();
-  const secret = notificationWebhookSecret.value();
+  const url = notificationWebhookUrl.value()?.trim();
+  const secret = notificationWebhookSecret.value()?.trim();
 
   if (!url || !secret) {
-    console.error("Notification webhook is not configured");
-    return;
+    throw new Error("Notification webhook is not configured");
   }
 
   const response = await fetch(url, {
@@ -47,7 +52,7 @@ const loadContext = async (boardId, listId) => {
     listTitle: list.title || "Lista",
     listIsFinalizado: list.title?.trim().toLowerCase() === "finalizado",
     members: board.members || [],
-    memberEmails: board.memberEmails || [],
+    memberEmails: resolveMemberEmails(board),
     boardId,
     listId,
   };
