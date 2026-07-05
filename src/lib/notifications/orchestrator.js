@@ -1,6 +1,6 @@
 import { buildNotificationEmail } from "./buildEmail";
 import { claimNotificationDelivery } from "./idempotency";
-import { recordFeedEntries } from "./notificationFeed";
+import { buildFeedFragment, recordFeedEntries } from "./notificationFeed";
 import { resolveNotificationRecipients } from "./recipients";
 
 const trimEnv = (value) => value?.trim().replace(/^["']|["']$/g, "") || "";
