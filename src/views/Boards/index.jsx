@@ -71,12 +71,12 @@ function Boards() {
         <Loader />
       ) : (
         <div className="h-full overflow-auto">
-          <div className="flex flex-col items-center justify-center relative py-6 px-4 md:grid md:grid-cols-1 lg:grid-cols-3 md:gap-3 md:w-auto md:max-w-4xl md:mx-auto">
+          <div className="flex flex-col items-center justify-center relative py-6 px-4 max-w-5xl md:grid md:grid-cols-1 lg:grid-cols-3 md:gap-3 md:w-auto md:max-w-4xl md:mx-auto">
             {boards.map((board) => (
               <div key={board.key}>
                 <Link href={`/b/${board.key}`} className="w-full mb-6 md:m-0 block">
                   <Button className="h-[120px] w-full md:h-[188px] md:w-[280px] px-4 py-3 !bg-[#303234] rounded-md text-base text-pearl-white font-medium overflow-hidden whitespace-normal border border-border-ki hover:!bg-ki-black hover:text-ki-orange transition-colors">
-                    <span className="block break-words hyphens-auto">{board.title}</span>
+                    <span className="block break-words hyphens-auto text-pearl-white">{board.title}</span>
                   </Button>
                 </Link>
               </div>

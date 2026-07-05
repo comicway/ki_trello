@@ -9,23 +9,9 @@ export const resolveMemberEmails = (payload = {}) => {
 const normalizeEmail = (email) => email?.toLowerCase?.().trim() || "";
 
 export const resolveMentionRecipients = (payload) => {
-  const recipientEmail = payload.recipientEmail;
-  const email = normalizeEmail(recipientEmail);
-  if (!email) return [];
-
-  const parsedTargets = (payload.parsedTargetEmails?.length
-    ? payload.parsedTargetEmails
-    : [recipientEmail]
-  ).map(normalizeEmail).filter(Boolean);
-
-  if (!parsedTargets.includes(email)) return [];
-
-  const taskAssignee = normalizeEmail(payload.taskAssigneeEmail);
-  if (taskAssignee && email === taskAssignee && parsedTargets[0] !== taskAssignee) {
-    return [];
-  }
-
-  return [recipientEmail];
+  return (payload.parsedTargetEmails || [])
+    .map(normalizeEmail)
+    .filter(Boolean);
 };
 
 export const resolveNotificationRecipients = (payload) => {
