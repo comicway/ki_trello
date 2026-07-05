@@ -1,9 +1,12 @@
-import { Resend } from "resend";
 import { buildTaskCompletedEmail } from "./buildTaskCompletedEmail";
 
-const getResendClient = () => {
-  const apiKey = process.env.RESEND_API_KEY;
+const trimEnv = (value) => value?.trim().replace(/^["']|["']$/g, "") || "";
+
+const getResendClient = async () => {
+  const apiKey = trimEnv(process.env.RESEND_API_KEY);
   if (!apiKey) throw new Error("RESEND_API_KEY is not configured");
+
+  const { Resend } = await import("resend");
   return new Resend(apiKey);
 };
 
@@ -13,7 +16,16 @@ const resolveAssigneeLabel = (members, assigneeEmail) => {
   return member?.displayName || assigneeEmail;
 };
 
+export const resolveMemberEmails = (payload = {}) => {
+  const fromField = payload.memberEmails || [];
+  const fromMembers = (payload.members || []).map((m) => m.email).filter(Boolean);
+  return [...new Set([...fromField, ...fromMembers].filter(Boolean))];
+};
+
 export async function sendTaskCompletedNotifications(payload) {
+  const from = trimEnv(process.env.RESEND_FROM_EMAIL);
+  if (!from) throw new Error("RESEND_FROM_EMAIL is not configured");
+
   const {
     boardTitle,
     listTitle,
@@ -24,13 +36,9 @@ export async function sendTaskCompletedNotifications(payload) {
     completedAt,
     boardId,
     members = [],
-    memberEmails = [],
   } = payload;
 
-  const from = process.env.RESEND_FROM_EMAIL;
-  if (!from) throw new Error("RESEND_FROM_EMAIL is not configured");
-
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "";
+  const appUrl = trimEnv(process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL);
   const boardUrl = boardId && appUrl ? `${appUrl.replace(/\/$/, "")}/b/${boardId}` : "";
 
   const assigneeLabel = resolveAssigneeLabel(members, assigneeEmail);
@@ -45,21 +53,41 @@ export async function sendTaskCompletedNotifications(payload) {
     boardUrl,
   });
 
-  const recipients = [...new Set(memberEmails.filter(Boolean))];
+  const recipients = resolveMemberEmails(payload);
   if (recipients.length === 0) {
-    console.warn("sendTaskCompletedNotifications: no recipients");
-    return { sent: 0 };
+    throw new Error("No board members with email to notify");
   }
 
-  const resend = getResendClient();
-  const { error } = await resend.emails.send({
-    from,
-    to: recipients,
-    subject,
-    html,
-    text,
-  });
+  const resend = await getResendClient();
+  const results = await Promise.all(
+    recipients.map(async (to) => {
+      const { data, error } = await resend.emails.send({
+        from,
+        to,
+        subject,
+        html,
+        text,
+      });
 
-  if (error) throw new Error(error.message || "Resend send failed");
-  return { sent: recipients.length };
+      if (error) {
+        throw new Error(`Resend failed for ${to}: ${error.message || JSON.stringify(error)}`);
+      }
+
+      return { to, id: data?.id };
+    })
+  );
+
+  return { sent: results.length, results };
+}
+
+export function getNotificationEnvStatus() {
+  return {
+    resendApiKey: Boolean(trimEnv(process.env.RESEND_API_KEY)),
+    resendFromEmail: Boolean(trimEnv(process.env.RESEND_FROM_EMAIL)),
+    webhookSecret: Boolean(trimEnv(process.env.NOTIFICATION_WEBHOOK_SECRET)),
+    firebaseAdmin: Boolean(
+      trimEnv(process.env.FIREBASE_CLIENT_EMAIL) && process.env.FIREBASE_PRIVATE_KEY
+    ),
+    appUrl: Boolean(trimEnv(process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL)),
+  };
 }
