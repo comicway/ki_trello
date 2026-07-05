@@ -18,18 +18,27 @@ const getResendClient = async () => {
 
 export function getNotificationEnvStatus() {
   const apiKey = trimEnv(process.env.RESEND_API_KEY);
-  const hasServiceAccountJson = Boolean(trimEnv(process.env.FIREBASE_SERVICE_ACCOUNT_JSON));
+  const hasServiceAccountJson = Boolean(
+    trimEnv(process.env.FIREBASE_SERVICE_ACCOUNT_JSON),
+  );
 
   return {
     resendApiKey: Boolean(apiKey),
     resendApiKeyFormatOk: apiKey.startsWith("re_"),
     resendFromEmail: Boolean(trimEnv(process.env.RESEND_FROM_EMAIL)),
     webhookSecret: Boolean(trimEnv(process.env.NOTIFICATION_WEBHOOK_SECRET)),
-    firebaseAdmin: hasServiceAccountJson || Boolean(
-      trimEnv(process.env.FIREBASE_CLIENT_EMAIL) && process.env.FIREBASE_PRIVATE_KEY
+    firebaseAdmin:
+      hasServiceAccountJson ||
+      Boolean(
+        trimEnv(process.env.FIREBASE_CLIENT_EMAIL) &&
+        process.env.FIREBASE_PRIVATE_KEY,
+      ),
+    firebaseAdminMode: hasServiceAccountJson
+      ? "service_account_json"
+      : "split_credentials",
+    appUrl: Boolean(
+      trimEnv(process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL),
     ),
-    firebaseAdminMode: hasServiceAccountJson ? "service_account_json" : "split_credentials",
-    appUrl: Boolean(trimEnv(process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL)),
   };
 }
 
@@ -48,10 +57,18 @@ export async function dispatchNotification(payload) {
       console.info("mention_dispatch_no_recipients", {
         idempotencyKey,
         parsedTargetEmails: payload.parsedTargetEmails || [],
-        mentionedEmails: payload.mentionedEmails || payload.comment?.mentionedEmails || [],
+        mentionedEmails:
+          payload.mentionedEmails || payload.comment?.mentionedEmails || [],
         actorEmail: payload.actorEmail || payload.authorEmail || null,
+        reason: "Filtered out (self-mention, inactive, or missing email)",
       });
-      return { ok: true, skipped: true, reason: "no_recipients", idempotencyKey };
+      return {
+        ok: true,
+        skipped: true,
+        reason: "no_recipients",
+        idempotencyKey,
+        recipientsCount: 0,
+      };
     }
     throw new Error("No recipients to notify");
   }
@@ -75,20 +92,31 @@ export async function dispatchNotification(payload) {
     return { ok: true, skipped: true, duplicate: true, idempotencyKey };
   }
 
-  const appUrl = trimEnv(process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL);
-  const boardUrl = boardId && appUrl ? `${appUrl.replace(/\/$/, "")}/b/${boardId}` : "";
+  const appUrl = trimEnv(
+    process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL,
+  );
+  const boardUrl =
+    boardId && appUrl ? `${appUrl.replace(/\/$/, "")}/b/${boardId}` : "";
   const emailPayload = { ...payload, boardUrl };
   const { subject, html, text } = buildNotificationEmail(emailPayload);
 
   const resend = await getResendClient();
   const results = await Promise.all(
     recipients.map(async (to) => {
-      const { data, error } = await resend.emails.send({ from, to, subject, html, text });
+      const { data, error } = await resend.emails.send({
+        from,
+        to,
+        subject,
+        html,
+        text,
+      });
       if (error) {
-        throw new Error(`Resend failed for ${to}: ${error.message || JSON.stringify(error)}`);
+        throw new Error(
+          `Resend failed for ${to}: ${error.message || JSON.stringify(error)}`,
+        );
       }
       return { to, id: data?.id };
-    })
+    }),
   );
 
   if (eventType === "mention") {
@@ -105,7 +133,13 @@ export async function dispatchNotification(payload) {
     console.error("notification_feed_write_error:", error.message);
   }
 
-  return { ok: true, skipped: false, sent: results.length, results, idempotencyKey };
+  return {
+    ok: true,
+    skipped: false,
+    sent: results.length,
+    results,
+    idempotencyKey,
+  };
 }
 
 // Legacy alias
