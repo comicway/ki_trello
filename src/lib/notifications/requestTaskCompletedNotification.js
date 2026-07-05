@@ -1,4 +1,9 @@
-import { firebase } from "@/firebase/firebase";
+import { auth } from "@/firebase/firebase";
+
+const getApiUrl = () => {
+  if (typeof window === "undefined") return "/api/notifications/task-completed";
+  return `${window.location.origin}/api/notifications/task-completed`;
+};
 
 export async function requestTaskCompletedNotification({
   boardId,
@@ -7,12 +12,15 @@ export async function requestTaskCompletedNotification({
   itemType = "tarea",
   subtaskId = null,
 }) {
-  const user = firebase.auth().currentUser;
-  if (!user) return;
+  const user = auth?.currentUser;
+  if (!user) {
+    console.warn("Task notification skipped: user not authenticated");
+    return;
+  }
 
   try {
-    const token = await user.getIdToken();
-    const response = await fetch("/api/notifications/task-completed", {
+    const token = await user.getIdToken(true);
+    const response = await fetch(getApiUrl(), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -28,10 +36,13 @@ export async function requestTaskCompletedNotification({
       }),
     });
 
+    const body = await response.json().catch(() => ({}));
     if (!response.ok) {
-      const body = await response.json().catch(() => ({}));
       console.error("Task notification failed:", response.status, body);
+      return;
     }
+
+    console.info("Task notification sent:", body);
   } catch (error) {
     console.error("Task notification error:", error);
   }

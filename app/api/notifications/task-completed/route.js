@@ -7,6 +7,7 @@ import {
 } from "@/lib/notifications/sendTaskCompletedEmail";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 const trimEnv = (value) => value?.trim().replace(/^["']|["']$/g, "") || "";
 
@@ -56,8 +57,17 @@ export async function POST(request) {
     const result = await sendTaskCompletedNotifications(payload);
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {
-    console.error("task-completed notification error:", error);
-    const status = error.message === "Forbidden" ? 403 : 500;
+    console.error("task-completed notification error:", {
+      message: error.message,
+      code: error.code,
+      stack: error.stack,
+    });
+
+    const status =
+      error.message === "Forbidden" ? 403 :
+      error.message?.includes("not configured") ? 503 :
+      500;
+
     return NextResponse.json(
       { error: error.message || "Notification failed" },
       { status }

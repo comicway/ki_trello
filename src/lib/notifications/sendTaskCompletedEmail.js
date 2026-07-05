@@ -5,6 +5,9 @@ const trimEnv = (value) => value?.trim().replace(/^["']|["']$/g, "") || "";
 const getResendClient = async () => {
   const apiKey = trimEnv(process.env.RESEND_API_KEY);
   if (!apiKey) throw new Error("RESEND_API_KEY is not configured");
+  if (!apiKey.startsWith("re_")) {
+    throw new Error("RESEND_API_KEY format is invalid (must start with re_)");
+  }
 
   const { Resend } = await import("resend");
   return new Resend(apiKey);
@@ -81,13 +84,18 @@ export async function sendTaskCompletedNotifications(payload) {
 }
 
 export function getNotificationEnvStatus() {
+  const apiKey = trimEnv(process.env.RESEND_API_KEY);
+  const hasServiceAccountJson = Boolean(trimEnv(process.env.FIREBASE_SERVICE_ACCOUNT_JSON));
+
   return {
-    resendApiKey: Boolean(trimEnv(process.env.RESEND_API_KEY)),
+    resendApiKey: Boolean(apiKey),
+    resendApiKeyFormatOk: apiKey.startsWith("re_"),
     resendFromEmail: Boolean(trimEnv(process.env.RESEND_FROM_EMAIL)),
     webhookSecret: Boolean(trimEnv(process.env.NOTIFICATION_WEBHOOK_SECRET)),
-    firebaseAdmin: Boolean(
+    firebaseAdmin: hasServiceAccountJson || Boolean(
       trimEnv(process.env.FIREBASE_CLIENT_EMAIL) && process.env.FIREBASE_PRIVATE_KEY
     ),
+    firebaseAdminMode: hasServiceAccountJson ? "service_account_json" : "split_credentials",
     appUrl: Boolean(trimEnv(process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL)),
   };
 }
