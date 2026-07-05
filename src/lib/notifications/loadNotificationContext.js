@@ -71,9 +71,8 @@ export async function assertBoardMember(boardId, email) {
   const boardSnap = await db.doc(`boards/${boardId}`).get();
   if (!boardSnap.exists) throw new Error("Board not found");
 
-  const board = boardSnap.data();
-  const memberEmails = resolveMemberEmails(board);
-  if (!memberEmails.includes(email)) {
+  const memberEmails = resolveMemberEmails(boardSnap.data()).map((e) => e.toLowerCase());
+  if (!memberEmails.includes(email.toLowerCase())) {
     throw new Error("Forbidden");
   }
 }
