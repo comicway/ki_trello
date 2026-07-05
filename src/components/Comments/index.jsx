@@ -1,19 +1,18 @@
 import { useState, useEffect, useContext, useRef } from "react";
-import { Avatar } from "antd";
-import {
-  MessageOutlined,
-  UserOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  CheckOutlined,
-  CloseOutlined,
-} from "@ant-design/icons";
 import moment from "moment";
 import { db } from "../../firebase";
 import { UserContext } from "../../providers/UserProvider";
 import { extractMentionTargetsFromText } from "../../lib/notifications/mentions";
 import { requestCommentMentionNotifications } from "../../lib/notifications/requestCommentMentionNotifications";
 import MarkdownContent from "../MarkdownContent";
+import MemberAvatar from "../MemberAvatar";
+import {
+  MessageIcon,
+  EditIcon,
+  DeleteIcon,
+  CheckIcon,
+  CloseIcon,
+} from "../ui/icons";
 
 // ─── URL helpers ──────────────────────────────────────────────────────────────
 
@@ -74,7 +73,7 @@ function LinkPreview({ url, onEdit, onDelete }) {
             title="Editar URL"
             className="p-1 rounded text-light-gray hover:text-pearl-white hover:bg-[#2c333a] border-none bg-transparent cursor-pointer transition-colors"
           >
-            <EditOutlined className="text-xs" />
+            <EditIcon className="h-3 w-3" />
           </button>
         )}
         {onDelete && (
@@ -84,7 +83,7 @@ function LinkPreview({ url, onEdit, onDelete }) {
             title="Eliminar URL"
             className="p-1 rounded text-light-gray hover:text-alert-danger hover:bg-[#2c333a] border-none bg-transparent cursor-pointer transition-colors"
           >
-            <DeleteOutlined className="text-xs" />
+            <DeleteIcon className="h-3 w-3" />
           </button>
         )}
       </div>
@@ -170,7 +169,7 @@ function MentionTextarea({ value, onChange, onSubmit, members, placeholder }) {
                 i === menuIndex ? "bg-ki-purple text-pearl-white" : "text-pearl-white hover:bg-ki-black"
               }`}
             >
-              <Avatar src={m.photoURL} icon={!m.photoURL && <UserOutlined />} size={20} className="bg-ki-purple flex-shrink-0" />
+              <MemberAvatar member={m} size={20} borderClass="border-ki-black" />
               <span className="truncate">{m.displayName || m.email}</span>
             </li>
           ))}
@@ -228,7 +227,7 @@ function CommentItem({ comment, currentUser, members, onSave, onDelete }) {
 
   return (
     <div className="flex gap-3">
-      <Avatar src={photo} icon={!photo && <UserOutlined />} size={28} className="bg-ki-purple flex-shrink-0 mt-0.5" />
+      <MemberAvatar member={{ photoURL: photo, displayName: name, email: comment.authorEmail }} size={28} borderClass="border-ki-black" className="mt-0.5" />
       <div className="flex-1 min-w-0">
         {/* Author + date */}
         <div className="flex items-baseline gap-2 mb-1">
@@ -259,14 +258,14 @@ function CommentItem({ comment, currentUser, members, onSave, onDelete }) {
                 disabled={saving}
                 className="flex items-center gap-1 px-3 py-1 bg-ki-purple text-pearl-white rounded text-xs font-medium hover:bg-ki-pastel transition-colors disabled:opacity-40 cursor-pointer border-none"
               >
-                <CheckOutlined /> Guardar
+                <CheckIcon className="h-3 w-3" /> Guardar
               </button>
               <button
                 type="button"
                 onClick={handleCancel}
                 className="flex items-center gap-1 px-3 py-1 bg-transparent border border-border-ki text-light-gray rounded text-xs font-medium hover:text-alert-danger hover:border-alert-danger transition-colors cursor-pointer"
               >
-                <CloseOutlined /> Cancelar
+                <CloseIcon className="h-3 w-3" /> Cancelar
               </button>
             </div>
           </div>
@@ -284,7 +283,7 @@ function CommentItem({ comment, currentUser, members, onSave, onDelete }) {
                     title="Editar comentario"
                     className="p-1 rounded text-light-gray hover:text-pearl-white hover:bg-ki-black border-none bg-transparent cursor-pointer transition-colors"
                   >
-                    <EditOutlined className="text-xs" />
+                    <EditIcon className="h-3 w-3" />
                   </button>
                   <button
                     type="button"
@@ -292,7 +291,7 @@ function CommentItem({ comment, currentUser, members, onSave, onDelete }) {
                     title="Eliminar comentario"
                     className="p-1 rounded text-light-gray hover:text-alert-danger hover:bg-ki-black border-none bg-transparent cursor-pointer transition-colors"
                   >
-                    <DeleteOutlined className="text-xs" />
+                    <DeleteIcon className="h-3 w-3" />
                   </button>
                 </div>
               )}
@@ -381,7 +380,7 @@ export default function Comments({ boardKey, listKey, tareaKey, subtaskId = null
   return (
     <div className="mt-8">
       <h4 className="flex items-center gap-2 text-pearl-white font-semibold mb-4">
-        <MessageOutlined />
+        <MessageIcon className="h-4 w-4" />
         <span>Comentarios</span>
       </h4>
 

@@ -10,11 +10,8 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@ant-design/icons": "^4.3.0",
-    "@ant-design/v5-patch-for-react-19": "^1.0.3",
     "@hello-pangea/dnd": "^18.0.1",
     "ajv": "^8.12.0",
-    "antd": "^5.29.3",
     "autoprefixer": "^10.5.2",
     "dayjs": "^1.11.21",
     "firebase": "^8.2.3",

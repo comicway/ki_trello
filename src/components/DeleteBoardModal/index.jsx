@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { Modal, Input, Button } from "antd";
-import { DeleteOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
+import Modal from "../ui/Modal";
+import { inputClass, btnGhost, btnDanger } from "../ui/styles";
+import { AlertIcon, DeleteIcon } from "../ui/icons";
 
 const CONFIRM_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
@@ -9,12 +10,7 @@ const generateConfirmCode = () =>
     CONFIRM_CHARS[Math.floor(Math.random() * CONFIRM_CHARS.length)]
   ).join("");
 
-export default function DeleteBoardModal({
-  visible,
-  onClose,
-  boardTitle,
-  onConfirm,
-}) {
+export default function DeleteBoardModal({ visible, onClose, boardTitle, onConfirm }) {
   const [confirmCode, setConfirmCode] = useState("");
   const [userInput, setUserInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -49,15 +45,13 @@ export default function DeleteBoardModal({
   return (
     <Modal
       open={visible}
-      onCancel={onClose}
-      footer={null}
+      onClose={onClose}
       title={
-        <div className="flex items-center gap-2 text-pearl-white">
-          <ExclamationCircleOutlined className="text-alert-danger" />
+        <div className="flex items-center gap-2">
+          <AlertIcon className="h-5 w-5 text-alert-danger" />
           <span className="font-semibold">Eliminar board</span>
         </div>
       }
-      className="dark-modal"
     >
       <div className="space-y-4">
         <p className="text-light-gray text-sm">
@@ -70,38 +64,27 @@ export default function DeleteBoardModal({
           <p className="text-pearl-white font-mono text-lg tracking-widest select-all">{confirmCode}</p>
         </div>
 
-        <Input
+        <input
           value={userInput}
           onChange={(e) => {
             setUserInput(e.target.value.toUpperCase());
             setError("");
           }}
           placeholder="Pega el código aquí"
-          className="bg-ki-black text-pearl-white border-border-ki font-mono tracking-wider uppercase"
+          className={`${inputClass} font-mono tracking-wider uppercase`}
           autoComplete="off"
         />
 
         {error && <p className="text-red-400 text-xs">{error}</p>}
 
         <div className="flex gap-2 justify-end pt-1">
-          <Button
-            onClick={onClose}
-            disabled={loading}
-            className="bg-transparent border-border-ki text-light-gray hover:text-pearl-white hover:border-ki-orange"
-          >
+          <button type="button" onClick={onClose} disabled={loading} className={btnGhost}>
             Cancelar
-          </Button>
-          <Button
-            type="primary"
-            danger
-            loading={loading}
-            disabled={!isMatch}
-            onClick={handleConfirm}
-            icon={<DeleteOutlined />}
-            className="font-medium"
-          >
-            Eliminar board
-          </Button>
+          </button>
+          <button type="button" disabled={!isMatch || loading} onClick={handleConfirm} className={btnDanger}>
+            <DeleteIcon className="h-4 w-4" />
+            {loading ? "Eliminando…" : "Eliminar board"}
+          </button>
         </div>
       </div>
     </Modal>

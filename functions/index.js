@@ -144,8 +144,7 @@ const handleCommentCreated = async ({ boardId, listId, tareaId, commentId, subta
     memberCount: context.members?.length || 0,
     storedMentions: comment.mentionedEmails || [],
     resolvedEvents: events.map((event) => ({
-      recipientEmail: event.recipientEmail,
-      recipientUid: event.recipientUid || null,
+      parsedTargetEmails: event.parsedTargetEmails || [],
     })),
     eventCount: events.length,
   });

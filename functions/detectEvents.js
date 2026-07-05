@@ -152,21 +152,33 @@ const buildCommentEvents = (comment, context) => {
   const targets = extractMentionTargetsFromComment(comment, context.members || []);
   const parsedTargetEmails = targets.map((target) => target.email);
 
-  return targets.map((target) => ({
+  if (parsedTargetEmails.length === 0) return [];
+
+  const truncateFragment = (text = "") => {
+    const clean = String(text).replace(/\s+/g, " ").trim();
+    if (!clean) return "";
+    if (clean.length <= 50) return clean;
+    return `${clean.slice(0, 49)}…`;
+  };
+
+  return [
+    {
       eventType: EVENT_TYPES.MENTION,
-      idempotencyKey: `mention:comment:${context.commentId}:${target.email}`,
+      idempotencyKey: `mention:comment:${context.commentId}`,
       itemType: context.subtaskId ? "subtask" : "tarea",
       subtaskId: context.subtaskId || null,
       itemTitle: context.itemTitle || "Sin título",
-      recipientEmail: target.email,
-      recipientUid: target.uid || null,
       parsedTargetEmails,
-      taskAssigneeEmail: context.taskAssigneeEmail || null,
       mentionSource: "comment",
-      messageFragment: target.messageFragment,
+      messageFragment:
+        targets.map((target) => target.messageFragment).find(Boolean) ||
+        truncateFragment(comment.text),
       actorName: comment.authorName || comment.authorEmail || "Un miembro",
       actorEmail: comment.authorEmail || null,
-    }));
+      authorEmail: comment.authorEmail || null,
+      authorId: comment.authorId || comment.authorUid || null,
+    },
+  ];
 };
 
 module.exports = {

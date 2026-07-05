@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef } from "react";
-import { Input, Button } from "antd";
-import { CameraOutlined, UserOutlined } from "@ant-design/icons";
 import { firebase, auth, db } from "../../firebase";
 import MemberAvatar from "../../components/MemberAvatar";
+import { inputDarkClass, btnPrimary } from "../../components/ui/styles";
+import { CameraIcon, UserIcon, EyeIcon, EyeOffIcon } from "../../components/ui/icons";
 
 export default function Account() {
   const [user, setUser] = useState(null);
@@ -11,6 +11,8 @@ export default function Account() {
   const [photoURL, setPhotoURL] = useState(null);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPass, setShowPass] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
@@ -106,7 +108,6 @@ export default function Account() {
       <h2 className="text-2xl font-bold mb-6 text-pearl-white">Mi cuenta</h2>
 
       <form onSubmit={handleSubmit} className="w-full bg-ki-black border border-border-ki p-6 rounded-xl space-y-5">
-        {/* Foto de perfil */}
         <div className="flex flex-col items-center gap-3">
           <div className="relative">
             <MemberAvatar
@@ -120,62 +121,75 @@ export default function Account() {
               disabled={uploading}
               className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-ki-purple border border-border-ki flex items-center justify-center text-pearl-white hover:bg-ki-pastel transition-colors cursor-pointer disabled:opacity-50"
             >
-              <CameraOutlined className="text-sm" />
+              <CameraIcon className="h-4 w-4" />
             </button>
           </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handlePhotoSelect}
-          />
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
           <p className="text-light-gray text-xs">{user.email}</p>
         </div>
 
-        {/* Nombre */}
         <div>
           <label className="block text-light-gray text-sm mb-1">Nombre</label>
-          <Input
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            placeholder="Nombre"
-            prefix={<UserOutlined className="text-light-gray" />}
-            className="bg-dark-blue text-pearl-white border-border-ki"
-          />
+          <div className="relative">
+            <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-light-gray" />
+            <input
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="Nombre"
+              className={`${inputDarkClass} pl-9`}
+            />
+          </div>
         </div>
 
-        {/* Apellido */}
         <div>
           <label className="block text-light-gray text-sm mb-1">Apellido</label>
-          <Input
+          <input
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
             placeholder="Apellido"
-            className="bg-dark-blue text-pearl-white border-border-ki"
+            className={inputDarkClass}
           />
         </div>
 
-        {/* Contraseña */}
         {canChangePassword ? (
           <>
             <div>
               <label className="block text-light-gray text-sm mb-1">Nueva contraseña</label>
-              <Input.Password
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Dejar vacío para no cambiar"
-                className="bg-dark-blue text-pearl-white border-border-ki"
-              />
+              <div className="relative">
+                <input
+                  type={showPass ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Dejar vacío para no cambiar"
+                  className={`${inputDarkClass} pr-10`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPass((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-light-gray hover:text-pearl-white bg-transparent border-none cursor-pointer"
+                >
+                  {showPass ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <div>
               <label className="block text-light-gray text-sm mb-1">Confirmar contraseña</label>
-              <Input.Password
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Repetir contraseña"
-                className="bg-dark-blue text-pearl-white border-border-ki"
-              />
+              <div className="relative">
+                <input
+                  type={showConfirm ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Repetir contraseña"
+                  className={`${inputDarkClass} pr-10`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-light-gray hover:text-pearl-white bg-transparent border-none cursor-pointer"
+                >
+                  {showConfirm ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
           </>
         ) : (
@@ -187,14 +201,9 @@ export default function Account() {
         {error && <p className="text-red-400 text-sm">{error}</p>}
         {message && <p className="text-green-400 text-sm">{message}</p>}
 
-        <Button
-          type="primary"
-          htmlType="submit"
-          loading={loading}
-          className="w-full bg-ki-purple border-ki-purple hover:bg-ki-pastel text-pearl-white font-medium h-10"
-        >
-          Guardar cambios
-        </Button>
+        <button type="submit" disabled={loading} className={`${btnPrimary} w-full h-10`}>
+          {loading ? "Guardando…" : "Guardar cambios"}
+        </button>
       </form>
     </div>
   );

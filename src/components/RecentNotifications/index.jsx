@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BellOutlined } from "@ant-design/icons";
 import moment from "moment";
 import { auth } from "@/firebase/firebase";
+import { BellIcon } from "../ui/icons";
 
 export default function RecentNotifications() {
   const [items, setItems] = useState([]);
@@ -72,30 +72,41 @@ export default function RecentNotifications() {
   return (
     <section className="bg-ki-black border border-border-ki rounded-lg p-4 mt-6">
       <h2 className="text-pearl-white font-semibold text-lg mb-4 flex items-center gap-2">
-        <BellOutlined className="text-ki-purple" />
-        Últimas 10 notificaciones
+        <BellIcon className="h-5 w-5 text-ki-purple shrink-0" />
+        Últimas notificaciones
       </h2>
 
       {loading ? (
         <p className="text-light-gray text-sm italic">Cargando notificaciones…</p>
       ) : error ? (
-        <p className="text-light-gray text-sm italic">{error}</p>
+        <p className="text-light-gray text-sm italic" role="alert">
+          {error}
+        </p>
       ) : items.length === 0 ? (
         <p className="text-light-gray text-sm italic">No hay notificaciones recientes.</p>
       ) : (
-        <ul className="space-y-2 max-h-80 overflow-y-auto">
+        <ul className="space-y-2 max-h-80 overflow-y-auto" aria-live="polite">
           {items.map((item) => (
             <li
               key={item.id || item.idempotencyKey}
-              className="grid grid-cols-[88px_120px_1fr] gap-2 px-3 py-2 rounded-md bg-dark-blue border border-border-ki text-sm"
+              className="rounded-md bg-dark-blue border border-border-ki px-3 py-2 text-sm transition-colors hover:border-ki-purple focus-within:border-ki-purple sm:grid sm:grid-cols-[88px_120px_1fr] sm:gap-2"
             >
-              <span className="text-light-gray text-xs whitespace-nowrap">
+              <time
+                className="text-light-gray text-xs whitespace-nowrap block"
+                dateTime={item.createdAt || undefined}
+              >
                 {formatDate(item.createdAt)}
-              </span>
-              <span className="text-pearl-white font-medium truncate" title={item.actorName}>
+              </time>
+              <span
+                className="text-pearl-white font-medium truncate block"
+                title={item.actorName}
+              >
                 {item.actorName || "—"}
               </span>
-              <span className="text-light-gray truncate" title={item.messageFragment}>
+              <span
+                className="text-light-gray truncate block sm:col-span-1"
+                title={item.messageFragment}
+              >
                 {item.messageFragment || "—"}
               </span>
             </li>
