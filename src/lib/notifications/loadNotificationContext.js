@@ -1,4 +1,4 @@
-import { getFirebaseAdmin } from "@/lib/firebaseAdmin";
+import { getAdminFirestore } from "@/lib/firebaseAdmin";
 
 const FINALIZADO = "finalizado";
 
@@ -9,7 +9,7 @@ export const resolveMemberEmails = (board = {}) => {
 };
 
 export async function loadNotificationContext({ boardId, listId, tareaId, itemType, subtaskId }) {
-  const db = getFirebaseAdmin().firestore();
+  const db = getAdminFirestore();
   const [boardSnap, listSnap, tareaSnap] = await Promise.all([
     db.doc(`boards/${boardId}`).get(),
     db.doc(`boards/${boardId}/lists/${listId}`).get(),
@@ -67,7 +67,7 @@ export async function loadNotificationContext({ boardId, listId, tareaId, itemTy
 }
 
 export async function assertBoardMember(boardId, email) {
-  const db = getFirebaseAdmin().firestore();
+  const db = getAdminFirestore();
   const boardSnap = await db.doc(`boards/${boardId}`).get();
   if (!boardSnap.exists) throw new Error("Board not found");
 
