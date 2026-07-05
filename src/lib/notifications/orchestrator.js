@@ -64,11 +64,12 @@ export async function dispatchNotification(payload) {
   const recipients = resolveNotificationRecipients(payload);
   if (recipients.length === 0) {
     if (eventType === "mention") {
-      console.warn("mention_dispatch_no_recipients", {
+      console.info("mention_dispatch_no_recipients", {
         idempotencyKey,
-        recipientEmail: payload.recipientEmail,
-        actorEmail: payload.actorEmail,
+        parsedTargetEmails: payload.parsedTargetEmails || [],
+        actorEmail: payload.actorEmail || payload.authorEmail || null,
       });
+      return { ok: true, skipped: true, reason: "no_recipients", idempotencyKey };
     }
     throw new Error("No recipients to notify");
   }
@@ -92,8 +93,7 @@ export async function dispatchNotification(payload) {
   if (eventType === "mention") {
     console.info("mention_dispatch_sent", {
       idempotencyKey,
-      recipientEmail: payload.recipientEmail,
-      recipientUid: payload.recipientUid || null,
+      recipients,
       sent: results.length,
     });
   }

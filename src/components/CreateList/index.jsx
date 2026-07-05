@@ -1,13 +1,9 @@
 import { useState } from "react";
-import { Button, Input } from "antd";
+import { inputClass } from "../ui/styles";
 
 export default function CreateList({ handleCreateList, vertical = false }) {
   const [listTitle, setListTitle] = useState("");
   const [editing, setEditing] = useState(false);
-
-  const handleEnableEditing = () => setEditing(true);
-  const handleDisableEditing = () => setEditing(false);
-  const handleInputChange = (e) => setListTitle(e.target.value);
 
   const handleSubmitForm = (e) => {
     e.preventDefault();
@@ -17,30 +13,30 @@ export default function CreateList({ handleCreateList, vertical = false }) {
     setListTitle("");
   };
 
-  const inputClass = vertical
-    ? "w-full font-medium bg-ki-black text-pearl-white border-border-ki rounded-md min-h-[48px] text-sm box-border px-3"
-    : "min-w-[284px] mx-1 inline-block font-medium bg-ki-black text-pearl-white border-border-ki rounded-md min-h-[48px] text-sm box-border px-3";
+  const inputExtra = vertical
+    ? "min-h-[48px] box-border"
+    : "min-w-[284px] mx-1 inline-block min-h-[48px] box-border";
 
   const buttonClass = vertical
-    ? "w-full font-medium bg-dark-blue border border-dashed border-border-ki rounded-md min-h-[48px] py-2 px-3 text-sm text-light-gray hover:bg-ki-black hover:text-pearl-white hover:border-ki-purple transition-colors"
-    : "min-w-[292px] mx-1 inline-block font-medium bg-dark-blue border border-border-ki rounded-md min-h-[48px] py-1 px-3 text-sm text-pearl-white hover:bg-ki-black hover:text-ki-orange transition-colors hover:border-ki-orange";
+    ? "w-full font-medium bg-dark-blue border border-dashed border-border-ki rounded-md min-h-[48px] py-2 px-3 text-sm text-light-gray hover:bg-ki-black hover:text-pearl-white hover:border-ki-purple transition-colors cursor-pointer"
+    : "min-w-[292px] mx-1 inline-block font-medium bg-dark-blue border border-border-ki rounded-md min-h-[48px] py-1 px-3 text-sm text-pearl-white hover:bg-ki-black hover:text-ki-orange transition-colors hover:border-ki-orange cursor-pointer";
 
   return (
     <div className={vertical ? "w-full" : undefined}>
       {editing ? (
-        <form onBlur={handleDisableEditing} onSubmit={handleSubmitForm}>
-          <Input
+        <form onBlur={() => setEditing(false)} onSubmit={handleSubmitForm}>
+          <input
             placeholder="Create a new list..."
             value={listTitle}
-            onChange={handleInputChange}
+            onChange={(e) => setListTitle(e.target.value)}
             autoFocus
-            className={inputClass}
+            className={`${inputClass} ${inputExtra}`}
           />
         </form>
       ) : (
-        <Button className={buttonClass} onClick={handleEnableEditing}>
+        <button type="button" className={buttonClass} onClick={() => setEditing(true)}>
           + Add another list
-        </Button>
+        </button>
       )}
     </div>
   );

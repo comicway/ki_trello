@@ -127,7 +127,7 @@ export async function POST(request) {
     console.info("mention_events_debug", {
       commentId,
       eventCount: events.length,
-      recipients: events.map((e) => e.recipientEmail),
+      recipients: events[0]?.parsedTargetEmails || [],
     });
 
     if (events.length === 0) {

@@ -1,10 +1,10 @@
 import { useState, useEffect, useContext } from "react";
-import { Button, Input, Avatar, Tooltip } from "antd";
-import { UserAddOutlined, DeleteOutlined } from "@ant-design/icons";
 import AddMemberModal from "../AddMemberModal";
 import DeleteBoardModal from "../DeleteBoardModal";
 import MemberAvatar from "../MemberAvatar";
 import { UserContext } from "../../providers/UserProvider";
+import { inputClass } from "../ui/styles";
+import { UserAddIcon, DeleteIcon } from "../ui/icons";
 
 const MAX_VISIBLE_MEMBERS = 5;
 
@@ -71,30 +71,31 @@ export default function BoardTitle(props) {
               }}
               onBlur={handleDisableEdit}
             >
-              <Input
+              <input
                 value={boardTitle}
                 onChange={handleInputChange}
                 autoFocus
-                className="max-w-[200px] text-lg font-medium bg-ki-black text-pearl-white border-border-ki"
+                className={`${inputClass} max-w-[200px] text-lg font-medium`}
               />
             </form>
           ) : (
             <>
-              <Button
+              <button
+                type="button"
                 onClick={handleEnableEdit}
-                className="bg-transparent border-none text-pearl-white hover:bg-ki-black hover:text-ki-orange shadow-none h-[38px] font-medium text-lg px-3 transition-colors"
+                className="bg-transparent border-none text-pearl-white hover:bg-ki-black hover:text-ki-orange h-[38px] font-medium text-lg px-3 transition-colors cursor-pointer"
               >
                 <span className="max-w-[40vw] overflow-hidden text-ellipsis whitespace-nowrap block">
                   {title}
                 </span>
-              </Button>
-              <Button
+              </button>
+              <button
+                type="button"
                 onClick={onQuickAddTarea}
-                className="border-none text-pearl-white shadow-none h-[38px] font-medium text-sm px-3 transition-colors flex items-center gap-1 flex-shrink-0 hover:opacity-90"
-                style={{ backgroundColor: "#731AF2" }}
+                className="border-none text-pearl-white h-[38px] font-medium text-sm px-3 transition-colors flex items-center gap-1 flex-shrink-0 hover:opacity-90 bg-ki-purple rounded cursor-pointer"
               >
                 + Agregar Tarea
-              </Button>
+              </button>
             </>
           )}
         </div>
@@ -103,30 +104,25 @@ export default function BoardTitle(props) {
           {visibleMembers.length > 0 && (
             <div className="flex items-center -space-x-2 mr-1">
               {visibleMembers.map((member, i) => (
-                <Tooltip key={member.email || i} title={member.displayName || member.email}>
-                  <span className="inline-block">
-                    <MemberAvatar member={member} size={32} />
-                  </span>
-                </Tooltip>
+                <span key={member.email || i} title={member.displayName || member.email} className="inline-block">
+                  <MemberAvatar member={member} size={32} />
+                </span>
               ))}
               {extraMembers > 0 && (
-                <Avatar
-                  size={32}
-                  className="bg-ki-black border-2 border-dark-blue text-pearl-white text-xs flex-shrink-0"
-                >
+                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-ki-black border-2 border-dark-blue text-pearl-white text-xs flex-shrink-0">
                   +{extraMembers}
-                </Avatar>
+                </span>
               )}
             </div>
           )}
-          {/* Botón Agregar Miembro */}
-          <Button
+          <button
+            type="button"
             onClick={() => setMemberModalOpen(true)}
-            icon={<UserAddOutlined />}
-            className="bg-transparent border border-border-ki text-light-gray hover:bg-ki-black hover:text-pearl-white hover:border-ki-purple shadow-none h-[38px] transition-colors flex items-center gap-1 px-3"
+            className="inline-flex items-center gap-1 px-3 h-[38px] bg-transparent border border-border-ki text-light-gray hover:bg-ki-black hover:text-pearl-white hover:border-ki-purple transition-colors cursor-pointer rounded"
           >
+            <UserAddIcon className="h-4 w-4" />
             Agregar miembro
-          </Button>
+          </button>
 
           {isCurrentUserOwner && (
             <button
@@ -136,7 +132,7 @@ export default function BoardTitle(props) {
               onClick={() => setDeleteModalOpen(true)}
               className="w-9 h-9 rounded-full flex items-center justify-center border border-border-ki text-light-gray hover:text-alert-danger hover:border-alert-danger bg-transparent cursor-pointer transition-colors flex-shrink-0"
             >
-              <DeleteOutlined />
+              <DeleteIcon className="h-4 w-4" />
             </button>
           )}
         </div>

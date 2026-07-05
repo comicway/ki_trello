@@ -1,11 +1,10 @@
-import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import { EditIcon, DeleteIcon } from "../ui/icons";
 
 const URL_RE = /https?:\/\/[^\s]+/g;
 
 export const extractUrls = (text) =>
   [...(text?.matchAll(URL_RE) || [])].map((m) => m[0]);
 
-// onEdit(url) and onDelete(url) are optional — pass them to show action buttons
 export default function LinkPreviewList({ text, onEdit, onDelete }) {
   const urls = extractUrls(text);
   if (!urls.length) return null;
@@ -47,7 +46,7 @@ export default function LinkPreviewList({ text, onEdit, onDelete }) {
                     title="Editar URL"
                     className="p-1 rounded text-light-gray hover:text-pearl-white hover:bg-[#2c333a] border-none bg-transparent cursor-pointer transition-colors"
                   >
-                    <EditOutlined className="text-xs" />
+                    <EditIcon className="h-3 w-3" />
                   </button>
                 )}
                 {onDelete && (
@@ -57,7 +56,7 @@ export default function LinkPreviewList({ text, onEdit, onDelete }) {
                     title="Eliminar URL"
                     className="p-1 rounded text-light-gray hover:text-alert-danger hover:bg-[#2c333a] border-none bg-transparent cursor-pointer transition-colors"
                   >
-                    <DeleteOutlined className="text-xs" />
+                    <DeleteIcon className="h-3 w-3" />
                   </button>
                 )}
               </div>

@@ -2,6 +2,7 @@ import { EVENT_TYPES } from "./eventTypes";
 import {
   extractMentionTargetsFromComment,
   extractNewMentionTargets,
+  truncateFragment,
 } from "./mentions";
 
 const FINALIZADO = "finalizado";
@@ -145,19 +146,24 @@ export const buildCommentEvents = (comment, context) => {
   const targets = extractMentionTargetsFromComment(comment, context.members || []);
   const parsedTargetEmails = targets.map((target) => target.email);
 
-  return targets.map((target) => ({
+  if (parsedTargetEmails.length === 0) return [];
+
+  return [
+    {
       eventType: EVENT_TYPES.MENTION,
-      idempotencyKey: `mention:comment:${context.commentId}:${target.email}`,
+      idempotencyKey: `mention:comment:${context.commentId}`,
       itemType: context.subtaskId ? "subtask" : "tarea",
       subtaskId: context.subtaskId || null,
       itemTitle: context.itemTitle || "Sin título",
-      recipientEmail: target.email,
-      recipientUid: target.uid || null,
       parsedTargetEmails,
-      taskAssigneeEmail: context.taskAssigneeEmail || null,
       mentionSource: "comment",
-      messageFragment: target.messageFragment,
+      messageFragment:
+        targets.map((target) => target.messageFragment).find(Boolean) ||
+        truncateFragment(comment.text),
       actorName: comment.authorName || comment.authorEmail || "Un miembro",
       actorEmail: comment.authorEmail || null,
-    }));
+      authorEmail: comment.authorEmail || null,
+      authorId: comment.authorId || comment.authorUid || null,
+    },
+  ];
 };

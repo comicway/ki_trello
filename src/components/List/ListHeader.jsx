@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { Dropdown, Button, Space, Input } from "antd";
-import { MoreOutlined } from "@ant-design/icons";
+import Dropdown from "../ui/Dropdown";
+import { inputClass } from "../ui/styles";
+import { MoreIcon } from "../ui/icons";
 
 export default function ListHeader(props) {
   const [listHeader, setListHeader] = useState("");
@@ -33,17 +34,14 @@ export default function ListHeader(props) {
     }
   };
 
-  const listMenu = {
-    className: "bg-ki-black border border-border-ki text-pearl-white rounded-md",
-    items: [
-      {
-        key: "delete",
-        label: "Delete this list",
-        className: "hover:bg-alert-danger hover:text-pearl-white rounded",
-        onClick: () => handleDeleteList(listKey),
-      },
-    ],
-  };
+  const listMenuItems = [
+    {
+      key: "delete",
+      label: "Delete this list",
+      className: "hover:bg-alert-danger hover:text-pearl-white",
+      onClick: () => handleDeleteList(listKey),
+    },
+  ];
 
   return (
     <div className="flex items-center justify-between text-lg mb-3 px-4 whitespace-normal">
@@ -56,48 +54,39 @@ export default function ListHeader(props) {
             handleFormSubmit(event, handleUpdateList, listKey, listHeader)
           }
         >
-          <Input
+          <input
             type="text"
             value={listHeader}
-            onChange={(e) => handleInputChange(e)}
+            onChange={handleInputChange}
             autoFocus
-            className="text-lg px-2 rounded bg-dark-blue text-pearl-white border-border-ki"
+            className={`${inputClass} text-lg px-2 bg-dark-blue`}
           />
         </form>
       ) : (
-        <>
-          <div className="flex items-center gap-2 min-w-0">
-            <div
-              className="max-w-[200px] overflow-hidden block text-ellipsis text-pearl-white cursor-pointer font-medium"
-              onClick={() => handleEnableEdit()}
-            >
-              {title}
-            </div>
-            <span className="flex-shrink-0 min-w-[22px] h-[22px] px-1.5 flex items-center justify-center rounded-full bg-dark-blue border border-border-ki text-light-gray text-xs font-medium">
-              {tareaCount}
-            </span>
-          </div>
-        </>
-      )}
-      <Space direction="vertical">
-        <Space wrap>
-          <Dropdown
-            menu={listMenu}
-            trigger={["click"]}
-            placement="bottomRight"
+        <div className="flex items-center gap-2 min-w-0">
+          <div
+            className="max-w-[200px] overflow-hidden block text-ellipsis text-pearl-white cursor-pointer font-medium"
+            onClick={handleEnableEdit}
           >
-            <Button
-              shape="circle"
-              icon={
-                <MoreOutlined
-                  style={{ transform: "rotate(90deg)", fontSize: 22 }}
-                />
-              }
-              className="text-[18px] pr-[2px] bg-transparent border-none shadow-none text-light-gray hover:bg-dark-blue hover:text-pearl-white flex items-center justify-center"
-            />
-          </Dropdown>
-        </Space>
-      </Space>
+            {title}
+          </div>
+          <span className="flex-shrink-0 min-w-[22px] h-[22px] px-1.5 flex items-center justify-center rounded-full bg-dark-blue border border-border-ki text-light-gray text-xs font-medium">
+            {tareaCount}
+          </span>
+        </div>
+      )}
+      <Dropdown
+        align="right"
+        items={listMenuItems}
+        trigger={
+          <button
+            type="button"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-light-gray hover:bg-dark-blue hover:text-pearl-white bg-transparent border-none cursor-pointer transition-colors"
+          >
+            <MoreIcon className="h-5 w-5 rotate-90" />
+          </button>
+        }
+      />
     </div>
   );
 }

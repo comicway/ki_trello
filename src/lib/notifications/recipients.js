@@ -8,10 +8,33 @@ export const resolveMemberEmails = (payload = {}) => {
 
 const normalizeEmail = (email) => email?.toLowerCase?.().trim() || "";
 
+const resolveActorEmails = (payload = {}) => {
+  const emails = new Set();
+
+  const direct = normalizeEmail(
+    payload.actorEmail || payload.authorEmail || payload.senderEmail
+  );
+  if (direct) emails.add(direct);
+
+  const actorId = payload.actorId || payload.authorId || payload.senderId || null;
+  if (actorId && payload.members?.length) {
+    const actorMember = payload.members.find(
+      (member) => member.uid === actorId || member.id === actorId
+    );
+    const memberEmail = normalizeEmail(actorMember?.email);
+    if (memberEmail) emails.add(memberEmail);
+  }
+
+  return emails;
+};
+
 export const resolveMentionRecipients = (payload) => {
+  const actorEmails = resolveActorEmails(payload);
+
   return (payload.parsedTargetEmails || [])
     .map(normalizeEmail)
-    .filter(Boolean);
+    .filter(Boolean)
+    .filter((email) => !actorEmails.has(email));
 };
 
 export const resolveNotificationRecipients = (payload) => {

@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import "@ant-design/v5-patch-for-react-19";
-import { ConfigProvider } from "antd";
 import UserProvider from "@/providers/UserProvider";
 
 const isChunkLoadError = (reason) =>
@@ -24,19 +22,5 @@ export default function Providers({ children }) {
     return () => window.removeEventListener("unhandledrejection", handleRejection);
   }, []);
 
-  return (
-    <ConfigProvider
-      theme={{
-        token: {
-          colorBgContainer: "#1d2125",
-          colorBgElevated: "#22272b",
-          colorText: "#b6c2cf",
-          colorBorder: "#2d3147",
-          colorPrimary: "#7c6dd8",
-        },
-      }}
-    >
-      <UserProvider>{children}</UserProvider>
-    </ConfigProvider>
-  );
+  return <UserProvider>{children}</UserProvider>;
 }

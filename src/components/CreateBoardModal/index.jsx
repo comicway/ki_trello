@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Button, Input, Modal, Form } from "antd";
+import Modal from "../ui/Modal";
+import { inputClass, btnPrimary } from "../ui/styles";
 
 export default function CreateBoardModal(props) {
   const [boardTitle, setBoardTitle] = useState("");
-
   const { onCloseModal, onCreateBoard, visible } = props;
 
   const handleCreateBoard = (event) => {
@@ -14,36 +14,20 @@ export default function CreateBoardModal(props) {
     }
   };
 
-  const handleBoardTitleChange = (event) => {
-    setBoardTitle(event.target.value);
-  };
-
   return (
-    <Modal
-      title="Create board"
-      width="320px"
-      style={{ top: 60 }}
-      open={visible}
-      onCancel={onCloseModal}
-      footer={null}
-    >
-      <Form onSubmit={(event) => handleCreateBoard(event)}>
-        <Input
-          style={{ marginBottom: 16 }}
+    <Modal open={visible} onClose={onCloseModal} title={<span className="font-semibold text-lg">Create board</span>} width="320px">
+      <form onSubmit={handleCreateBoard} className="space-y-4">
+        <input
+          className={inputClass}
           placeholder="Add board title"
-          onChange={(event) => handleBoardTitleChange(event)}
+          onChange={(e) => setBoardTitle(e.target.value)}
           value={boardTitle}
           autoFocus
         />
-        <Button
-          disabled={boardTitle === ""}
-          type="primary"
-          onClick={(event) => handleCreateBoard(event)}
-          key="0"
-        >
+        <button type="submit" disabled={boardTitle === ""} className={btnPrimary}>
           Create
-        </Button>
-      </Form>
+        </button>
+      </form>
     </Modal>
   );
 }

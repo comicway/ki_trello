@@ -1,5 +1,5 @@
-import { CheckOutlined } from "@ant-design/icons";
 import moment from "moment";
+import { CheckIcon } from "../ui/icons";
 
 export default function DoneFooter({ doneBy, doneAt, label = "Tarea Finalizada" }) {
   if (!doneAt) return null;
@@ -9,11 +9,8 @@ export default function DoneFooter({ doneBy, doneAt, label = "Tarea Finalizada" 
 
   return (
     <div className="mt-8 pt-6 border-t border-border-ki flex items-center gap-3">
-      <div
-        className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-white text-xs"
-        style={{ backgroundColor: "#FF7900" }}
-      >
-        <CheckOutlined />
+      <div className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center bg-ki-orange text-pearl-white">
+        <CheckIcon className="h-3 w-3" />
       </div>
       <p className="text-light-gray text-sm m-0">
         {label}
