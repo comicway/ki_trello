@@ -9,7 +9,12 @@ export const resolveMemberEmails = (payload = {}) => {
 export const resolveNotificationRecipients = (payload) => {
   const { eventType, recipientEmail, actorEmail } = payload;
 
-  if (eventType === "mention" || eventType === "assignee_changed") {
+  if (eventType === "mention") {
+    if (!recipientEmail) return [];
+    return [recipientEmail];
+  }
+
+  if (eventType === "assignee_changed") {
     if (!recipientEmail) return [];
     if (recipientEmail.toLowerCase() === actorEmail?.toLowerCase()) return [];
     return [recipientEmail];

@@ -149,12 +149,9 @@ const buildCommentEvents = (comment, context) => {
   const hasMentions = (comment?.mentionedEmails || []).length > 0;
   if (!comment?.text && !hasMentions) return [];
 
-  const actorEmail = comment.authorEmail || null;
   const targets = extractMentionTargetsFromComment(comment, context.members || []);
 
-  return targets
-    .filter((target) => target.email?.toLowerCase() !== actorEmail?.toLowerCase())
-    .map((target) => ({
+  return targets.map((target) => ({
       eventType: EVENT_TYPES.MENTION,
       idempotencyKey: `mention:comment:${context.commentId}:${target.email}`,
       itemType: context.subtaskId ? "subtask" : "tarea",
@@ -165,7 +162,7 @@ const buildCommentEvents = (comment, context) => {
       mentionSource: "comment",
       messageFragment: target.messageFragment,
       actorName: comment.authorName || comment.authorEmail || "Un miembro",
-      actorEmail,
+      actorEmail: comment.authorEmail || null,
     }));
 };
 
