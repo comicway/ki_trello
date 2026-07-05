@@ -6,17 +6,38 @@ export const resolveMemberEmails = (payload = {}) => {
   return [...new Set([...fromField, ...fromMembers].filter(Boolean))];
 };
 
+const normalizeEmail = (email) => email?.toLowerCase?.().trim() || "";
+
+export const resolveMentionRecipients = (payload) => {
+  const recipientEmail = payload.recipientEmail;
+  const email = normalizeEmail(recipientEmail);
+  if (!email) return [];
+
+  const parsedTargets = (payload.parsedTargetEmails?.length
+    ? payload.parsedTargetEmails
+    : [recipientEmail]
+  ).map(normalizeEmail).filter(Boolean);
+
+  if (!parsedTargets.includes(email)) return [];
+
+  const taskAssignee = normalizeEmail(payload.taskAssigneeEmail);
+  if (taskAssignee && email === taskAssignee && parsedTargets[0] !== taskAssignee) {
+    return [];
+  }
+
+  return [recipientEmail];
+};
+
 export const resolveNotificationRecipients = (payload) => {
   const { eventType, recipientEmail, actorEmail } = payload;
 
   if (eventType === "mention") {
-    if (!recipientEmail) return [];
-    return [recipientEmail];
+    return resolveMentionRecipients(payload);
   }
 
   if (eventType === "assignee_changed") {
     if (!recipientEmail) return [];
-    if (recipientEmail.toLowerCase() === actorEmail?.toLowerCase()) return [];
+    if (normalizeEmail(recipientEmail) === normalizeEmail(actorEmail)) return [];
     return [recipientEmail];
   }
 

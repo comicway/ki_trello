@@ -78,7 +78,7 @@ export default function SignIn() {
   return (
     <div className="w-full h-full flex flex-col justify-center items-center px-6">
       <div className="w-full max-w-[420px]">
-        <img src="public/logo-kitechnologies-white.svg" alt="Logo de Ki technologies"/>
+        <img src="/logo-kitechnologies-white.svg" alt="Logo de Ki technologies" className="block mx-auto w-64 h-auto"/>
         {/* Header */}
         <h1 className="text-3xl font-bold mb-2 text-pearl-white text-center">
           {isRegister ? "Crear cuenta" : "Iniciar sesión"}
