@@ -109,10 +109,10 @@ export default function SubtareaModal({
   const dateInputValue = dueDate ? moment(dueDate).format("YYYY-MM-DD") : "";
 
   return (
-    <Drawer open={visible} onClose={handleClose} width={drawerWidth} zIndex={1001}>
+    <Drawer open={visible} onClose={handleClose} width={drawerWidth} zIndex={1300}>
       <div
         onMouseDown={handleResizeMouseDown}
-        className="absolute left-0 top-0 bottom-0 w-1.5 cursor-ew-resize z-10"
+        className="absolute left-0 top-0 bottom-0 z-20 w-1.5 shrink-0 cursor-ew-resize touch-none"
         title="Arrastrar para redimensionar"
       />
 

@@ -148,6 +148,8 @@ export async function POST(request) {
         dispatchNotification({
           ...context,
           ...event,
+          comment: context.comment,
+          mentionedEmails: context.comment?.mentionedEmails || mentionedEmails,
         })
       )
     );

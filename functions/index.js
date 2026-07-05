@@ -157,7 +157,7 @@ const handleCommentCreated = async ({ boardId, listId, tareaId, commentId, subta
     return;
   }
 
-  await dispatchEvents(events, { ...context, tareaId, subtaskId });
+  await dispatchEvents(events, { ...context, tareaId, subtaskId, comment });
 };
 
 exports.onTareaCommentCreated = onDocumentCreated(
