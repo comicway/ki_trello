@@ -46,9 +46,11 @@ const loadCommentContext = async ({ boardId, listId, tareaId, commentId, subtask
   };
 
   let itemTitle = tarea.title || "Sin título";
+  let taskAssigneeEmail = tarea.assigneeEmail || null;
   if (subtaskId) {
     const sub = (tarea.subtasks || []).find((s) => s.id === subtaskId);
     itemTitle = sub?.title || itemTitle;
+    taskAssigneeEmail = sub?.assigneeEmail || taskAssigneeEmail;
   }
 
   const members = board.members || [];
@@ -68,6 +70,7 @@ const loadCommentContext = async ({ boardId, listId, tareaId, commentId, subtask
     subtaskId: subtaskId || null,
     commentId,
     itemTitle,
+    taskAssigneeEmail,
     members,
     memberEmails,
     comment,

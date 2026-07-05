@@ -143,6 +143,7 @@ export const buildCommentEvents = (comment, context) => {
   if (!comment?.text && !hasMentions) return [];
 
   const targets = extractMentionTargetsFromComment(comment, context.members || []);
+  const parsedTargetEmails = targets.map((target) => target.email);
 
   return targets.map((target) => ({
       eventType: EVENT_TYPES.MENTION,
@@ -152,6 +153,8 @@ export const buildCommentEvents = (comment, context) => {
       itemTitle: context.itemTitle || "Sin título",
       recipientEmail: target.email,
       recipientUid: target.uid || null,
+      parsedTargetEmails,
+      taskAssigneeEmail: context.taskAssigneeEmail || null,
       mentionSource: "comment",
       messageFragment: target.messageFragment,
       actorName: comment.authorName || comment.authorEmail || "Un miembro",

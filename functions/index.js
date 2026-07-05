@@ -120,9 +120,11 @@ const handleCommentCreated = async ({ boardId, listId, tareaId, commentId, subta
   const tarea = tareaSnap.data() || {};
 
   let itemTitle = tarea.title || "Sin título";
+  let taskAssigneeEmail = tarea.assigneeEmail || null;
   if (subtaskId) {
     const sub = (tarea.subtasks || []).find((s) => s.id === subtaskId);
     itemTitle = sub?.title || itemTitle;
+    taskAssigneeEmail = sub?.assigneeEmail || taskAssigneeEmail;
   }
 
   const events = buildCommentEvents(comment, {
@@ -131,6 +133,7 @@ const handleCommentCreated = async ({ boardId, listId, tareaId, commentId, subta
     subtaskId,
     commentId,
     itemTitle,
+    taskAssigneeEmail,
   });
 
   console.info("mention_comment_scan", {
