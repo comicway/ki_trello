@@ -1,7 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 
 const MIN_WIDTH = 320;
-const MAX_WIDTH = 900;
 
 export default function useResizableDrawer(initialWidth = 520) {
   const [width, setWidth] = useState(initialWidth);
@@ -14,15 +13,30 @@ export default function useResizableDrawer(initialWidth = 520) {
     const startX = e.clientX;
     const startWidth = widthRef.current;
 
+    // Dynamically calculate MAX_WIDTH based on screen size
+    const MAX_WIDTH = Math.min(900, window.innerWidth * 0.95);
+
     document.body.style.cursor = "ew-resize";
     document.body.style.userSelect = "none";
 
+    let animationFrameId;
+
     const onMouseMove = (moveEvent) => {
       moveEvent.preventDefault();
+
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+
       const delta = startX - moveEvent.clientX;
+      // Fluid calculation respecting screen bounds and fixed limits
       const next = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth + delta));
-      widthRef.current = next;
-      setWidth(next);
+
+      animationFrameId = requestAnimationFrame(() => {
+        widthRef.current = next;
+        setWidth(next);
+        animationFrameId = null;
+      });
     };
 
     const onMouseUp = () => {
@@ -32,7 +46,7 @@ export default function useResizableDrawer(initialWidth = 520) {
       window.removeEventListener("mouseup", onMouseUp);
     };
 
-    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mousemove", onMouseMove, { passive: false });
     window.addEventListener("mouseup", onMouseUp);
   }, []);
 

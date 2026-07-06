@@ -49,6 +49,10 @@ export const resolveMentionRecipients = (payload) => {
   // Filtramos a los autores (auto-mención) y garantizamos emails válidos
   return targets.filter((email) => {
     if (!email) return false;
+
+    // Si el formato no es un email válido estricto, descartar inmediatamente (Hard Stop)
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return false;
+
     // Si el usuario se menciona a sí mismo, se omite el envío para él.
     if (actorEmails.has(email)) return false;
 
