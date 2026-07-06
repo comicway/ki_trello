@@ -12,7 +12,7 @@ import CountryFilterButton, { viewTabButtonClass } from "../../components/Countr
 import { getOwnerIds } from "../../utils/boardRoles";
 import { ensureTareasForLists, getListTareasIndex } from "../../utils/tareasState";
 import { filterTareasByCountry } from "../../utils/tareaCountryFilter";
-import { requestTaskCompletedNotification } from "../../lib/notifications/requestTaskCompletedNotification";
+import { UserContext } from "../../providers/UserProvider";
 
 const VIEW_MODES = { BOARD: "board", LIST: "list" };
 
