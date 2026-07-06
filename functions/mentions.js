@@ -1,7 +1,19 @@
 const FRAGMENT_MAX = 50;
 
 const normalize = (value = "") =>
-  String(value).trim().toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
+  String(value)
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "");
+
+const memberCandidates = (member) => {
+  const email = member.email || "";
+  const localPart = email.includes("@") ? email.split("@")[0] : "";
+  return [...new Set([member.displayName, email, localPart].filter(Boolean))];
+};
+
+const isMentionBoundary = (char) => !char || /[\s,.!?;:\-]/.test(char);
 
 const truncateFragment = (text = "", max = FRAGMENT_MAX) => {
   const clean = text.replace(/\s+/g, " ").trim();
@@ -28,29 +40,52 @@ const extractMentionTargetsFromText = (text = "", members = []) => {
 
   const targets = [];
   const seen = new Set();
+  let index = 0;
 
-  // Expresión regular que detecta únicamente correos electrónicos: @usuario@dominio.com
-  const emailRegex = /@([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/g;
-  let match;
+  while (index < text.length) {
+    if (text[index] !== "@") {
+      index += 1;
+      continue;
+    }
 
-  while ((match = emailRegex.exec(text)) !== null) {
-    const rawEmail = match[1];
-    const normalizedEmail = normalize(rawEmail);
+    const slice = text.slice(index + 1);
+    let best = null;
 
-    if (!seen.has(normalizedEmail)) {
-      const member = members.find(
-        (m) => normalize(m.email) === normalizedEmail,
-      );
-      if (member) {
-        seen.add(normalizedEmail);
-        targets.push({
-          email: member.email,
-          uid: member.uid || null,
-          mentionLabel: rawEmail,
-          messageFragment: buildMentionFragment(text, rawEmail),
-        });
+    for (const member of members) {
+      if (!member.email) continue;
+
+      for (const candidate of memberCandidates(member)) {
+        const candidateNorm = normalize(candidate);
+        const sliceNorm = normalize(slice);
+        if (!sliceNorm.startsWith(candidateNorm)) continue;
+
+        const nextChar = slice[candidate.length];
+        if (!isMentionBoundary(nextChar)) continue;
+
+        if (!best || candidate.length > best.label.length) {
+          best = { member, label: candidate, length: candidate.length };
+        }
       }
     }
+
+    if (!best) {
+      index += 1;
+      continue;
+    }
+
+    const email = best.member.email;
+    const normalizedEmail = normalize(email);
+    if (!seen.has(normalizedEmail)) {
+      seen.add(normalizedEmail);
+      targets.push({
+        email,
+        uid: best.member.uid || null,
+        mentionLabel: best.label,
+        messageFragment: buildMentionFragment(text, best.label),
+      });
+    }
+
+    index += 1 + best.length;
   }
 
   return targets;
