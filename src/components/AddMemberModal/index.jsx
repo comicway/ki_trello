@@ -1,12 +1,13 @@
 import { useState, useEffect, useContext } from "react";
-import { Modal, Input, Button, Tag } from "antd";
+import Modal from "../ui/Modal";
+import { inputClass, btnPrimary } from "../ui/styles";
 import {
-  UserAddOutlined,
-  MailOutlined,
-  CheckCircleOutlined,
-  CloseOutlined,
-  CrownOutlined,
-} from "@ant-design/icons";
+  UserAddIcon,
+  MailIcon,
+  CheckCircleIcon,
+  CloseIcon,
+  CrownIcon,
+} from "../ui/icons";
 import { db } from "../../firebase";
 import MemberAvatar from "../MemberAvatar";
 import { UserContext } from "../../providers/UserProvider";
@@ -142,25 +143,23 @@ export default function AddMemberModal({
   return (
     <Modal
       open={visible}
-      onCancel={onClose}
-      footer={null}
+      onClose={onClose}
       title={
-        <div className="flex items-center gap-2 text-pearl-white">
-          <UserAddOutlined />
+        <div className="flex items-center gap-2">
+          <UserAddIcon className="h-5 w-5" />
           <span className="font-semibold">Agregar miembro al board</span>
         </div>
       }
-      className="dark-modal"
     >
       <div className="space-y-5">
         {isCurrentUserOwner ? (
           <>
             <div>
               <label className="block text-light-gray text-sm mb-2">
-                <MailOutlined className="mr-1" />
+                <MailIcon className="inline h-4 w-4 mr-1" />
                 Correo electrónico (separa múltiples con coma o Enter)
               </label>
-              <Input.TextArea
+              <textarea
                 value={emailInput}
                 onChange={(e) => {
                   setEmailInput(e.target.value);
@@ -170,32 +169,27 @@ export default function AddMemberModal({
                 onKeyDown={handleKeyDown}
                 placeholder="ejemplo@correo.com, otro@correo.com"
                 rows={3}
-                className="bg-ki-black text-pearl-white border-border-ki rounded resize-none"
+                className={`${inputClass} resize-none`}
               />
               {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
               {success && (
                 <p className="text-green-400 text-xs mt-1 flex items-center gap-1">
-                  <CheckCircleOutlined /> {success}
+                  <CheckCircleIcon className="h-3 w-3" /> {success}
                 </p>
               )}
             </div>
 
-            <Button
-              type="primary"
-              loading={loading}
-              onClick={handleAdd}
-              icon={<UserAddOutlined />}
-              className="w-full bg-ki-purple border-ki-purple hover:bg-ki-pastel text-pearl-white font-medium h-9"
-            >
-              Agregar
-            </Button>
+            <button type="button" disabled={loading} onClick={handleAdd} className={`${btnPrimary} w-full h-9`}>
+              <UserAddIcon className="h-4 w-4" />
+              {loading ? "Agregando…" : "Agregar"}
+            </button>
           </>
         ) : (
           <>
             {error && <p className="text-red-400 text-xs">{error}</p>}
             {success && (
               <p className="text-green-400 text-xs flex items-center gap-1">
-                <CheckCircleOutlined /> {success}
+                <CheckCircleIcon className="h-3 w-3" /> {success}
               </p>
             )}
             <p className="text-light-gray text-sm">Solo los owners pueden agregar miembros.</p>
@@ -224,9 +218,9 @@ export default function AddMemberModal({
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
                       {memberIsOwner && (
-                        <Tag className="bg-ki-purple border-ki-purple text-pearl-white text-xs m-0">
+                        <span className="px-2 py-0.5 rounded bg-ki-purple border border-ki-purple text-pearl-white text-xs">
                           Owner
-                        </Tag>
+                        </span>
                       )}
                       {isCurrentUserOwner && member.uid && (
                         <button
@@ -240,7 +234,7 @@ export default function AddMemberModal({
                               : "border-border-ki text-light-gray hover:text-ki-orange hover:border-ki-orange bg-transparent"
                           }`}
                         >
-                          <CrownOutlined />
+                          <CrownIcon className="h-3 w-3" />
                           {memberIsOwner ? "Quitar" : "Owner"}
                         </button>
                       )}
@@ -252,7 +246,7 @@ export default function AddMemberModal({
                           onClick={() => handleRemove(member.email)}
                           className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center border border-border-ki text-light-gray hover:text-alert-danger hover:border-alert-danger bg-transparent cursor-pointer transition-colors disabled:opacity-40"
                         >
-                          <CloseOutlined className="text-xs" />
+                          <CloseIcon className="h-3 w-3" />
                         </button>
                       )}
                     </div>

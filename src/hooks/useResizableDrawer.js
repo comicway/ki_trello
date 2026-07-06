@@ -1,34 +1,54 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 
 const MIN_WIDTH = 320;
-const MAX_WIDTH = 900;
 
-/**
- * Returns [width, handleMouseDown] for a resizable right-side drawer.
- * Attach handleMouseDown to the left edge drag handle.
- */
 export default function useResizableDrawer(initialWidth = 520) {
   const [width, setWidth] = useState(initialWidth);
+  const widthRef = useRef(initialWidth);
 
   const handleMouseDown = useCallback((e) => {
     e.preventDefault();
+    e.stopPropagation();
+
     const startX = e.clientX;
-    const startWidth = width;
+    const startWidth = widthRef.current;
+
+    // Dynamically calculate MAX_WIDTH based on screen size
+    const MAX_WIDTH = Math.min(900, window.innerWidth * 0.95);
+
+    document.body.style.cursor = "ew-resize";
+    document.body.style.userSelect = "none";
+
+    let animationFrameId;
 
     const onMouseMove = (moveEvent) => {
+      moveEvent.preventDefault();
+
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+
       const delta = startX - moveEvent.clientX;
+      // Fluid calculation respecting screen bounds and fixed limits
       const next = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth + delta));
-      setWidth(next);
+
+      animationFrameId = requestAnimationFrame(() => {
+        widthRef.current = next;
+        setWidth(next);
+        animationFrameId = null;
+      });
     };
 
     const onMouseUp = () => {
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
     };
 
-    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mousemove", onMouseMove, { passive: false });
     window.addEventListener("mouseup", onMouseUp);
-  }, [width]);
+  }, []);
 
   return [width, handleMouseDown];
 }

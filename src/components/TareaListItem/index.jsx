@@ -1,14 +1,14 @@
 import { useState, useContext } from "react";
 import { Draggable } from "@hello-pangea/dnd";
-import { CalendarOutlined, UserOutlined, MenuOutlined } from "@ant-design/icons";
-import { Avatar, DatePicker, Dropdown } from "antd";
 import moment from "moment";
-import dayjs from "dayjs";
-import { panelDayjs, toDayjs } from "../../utils/datePicker";
 import TareaModal from "../TareaModal";
 import DoneToggle from "../DoneToggle";
+import MemberAvatar from "../MemberAvatar";
+import Dropdown from "../ui/Dropdown";
+import DateField from "../ui/DateField";
 import { UserContext } from "../../providers/UserProvider";
 import { buildDoneUpdate } from "../../utils/completion";
+import { CalendarIcon, MenuIcon, UserIcon } from "../ui/icons";
 
 const dateLabel = (dueDate) => {
   if (!dueDate) return null;
@@ -29,7 +29,6 @@ export default function TareaListItem({
 }) {
   const [showModal, setShowModal] = useState(false);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
-  const [pickerValue, setPickerValue] = useState(() => dayjs());
   const currentUser = useContext(UserContext);
 
   const {
@@ -46,7 +45,6 @@ export default function TareaListItem({
     readyForSalesforce,
   } = tarea;
 
-  const dueDateMoment = dueDate ? moment(dueDate) : null;
   const assignee = members?.find((m) => m.email === assigneeEmail);
   const dateText = dateLabel(dueDate);
 
@@ -61,7 +59,6 @@ export default function TareaListItem({
       tareaKey,
       tarea: { dueDate: date ? date.toISOString() : null },
     });
-    if (date) setPickerValue(panelDayjs(date));
     setDatePickerOpen(false);
   };
 
@@ -80,15 +77,10 @@ export default function TareaListItem({
     ...(members?.map((member, i) => ({
       key: member.email || String(i),
       label: (
-        <div className="flex items-center gap-2">
-          <Avatar
-            src={member.photoURL}
-            icon={!member.photoURL && <UserOutlined />}
-            size={20}
-            className="bg-ki-purple flex-shrink-0"
-          />
+        <span className="flex items-center gap-2">
+          <MemberAvatar member={member} size={20} borderClass="border-ki-black" />
           <span>{member.displayName || member.email}</span>
-        </div>
+        </span>
       ),
       onClick: () => handleAssigneeSelect(member.email),
     })) || []),
@@ -110,7 +102,7 @@ export default function TareaListItem({
               className="flex-shrink-0 text-light-gray hover:text-pearl-white cursor-grab active:cursor-grabbing px-1"
               title="Arrastrar tarea"
             >
-              <MenuOutlined className="text-base" />
+              <MenuIcon className="h-4 w-4" />
             </div>
 
             <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
@@ -137,54 +129,34 @@ export default function TareaListItem({
                     dateText ? "text-ki-orange" : "text-light-gray hover:text-pearl-white"
                   }`}
                 >
-                  {dateText ? (
-                    <span className="leading-none">{dateText}</span>
-                  ) : (
-                    <CalendarOutlined className="text-base" />
-                  )}
+                  {dateText ? <span className="leading-none">{dateText}</span> : <CalendarIcon className="h-4 w-4" />}
                 </button>
-                <DatePicker
+                <DateField
+                  value={dueDate}
                   open={datePickerOpen}
-                  onOpenChange={(open) => {
-                    setDatePickerOpen(open);
-                    if (open) setPickerValue(panelDayjs(dueDate));
-                  }}
-                  defaultPickerValue={panelDayjs(dueDate)}
-                  pickerValue={pickerValue}
-                  onPickerValueChange={setPickerValue}
-                  value={toDayjs(dueDate)}
+                  onOpenChange={setDatePickerOpen}
                   onChange={handleDateChange}
-                  format={(value) => (value && dayjs().isSame(value, "day") ? "Hoy" : value?.format("DD MMM"))}
-                  allowClear
-                  className="absolute opacity-0 pointer-events-none w-0 h-0 overflow-hidden"
-                  classNames={{ popup: { root: "dark-datepicker" } }}
                 />
               </div>
 
               <Dropdown
-                menu={{
-                  className: "bg-ki-black border border-border-ki text-pearl-white",
-                  items: assigneeMenuItems,
-                }}
-                trigger={["click"]}
-              >
-                {assignee ? (
-                  <Avatar
-                    src={assignee.photoURL}
-                    icon={!assignee.photoURL && <UserOutlined />}
-                    size={28}
-                    className="bg-ki-purple cursor-pointer border border-border-ki flex-shrink-0"
-                  />
-                ) : (
-                  <button
-                    type="button"
-                    title="Asignar responsable"
-                    className="w-7 h-7 rounded-full flex items-center justify-center border border-border-ki text-light-gray hover:text-pearl-white hover:border-ki-purple bg-ki-black transition-colors cursor-pointer"
-                  >
-                    <UserOutlined className="text-sm" />
-                  </button>
-                )}
-              </Dropdown>
+                items={assigneeMenuItems}
+                trigger={
+                  assignee ? (
+                    <button type="button" className="rounded-full border-none bg-transparent p-0 cursor-pointer">
+                      <MemberAvatar member={assignee} size={28} borderClass="border-border-ki" />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      title="Asignar responsable"
+                      className="w-7 h-7 rounded-full flex items-center justify-center border border-border-ki text-light-gray hover:text-pearl-white hover:border-ki-purple bg-ki-black transition-colors cursor-pointer"
+                    >
+                      <UserIcon className="h-3.5 w-3.5" />
+                    </button>
+                  )
+                }
+              />
             </div>
           </div>
         )}

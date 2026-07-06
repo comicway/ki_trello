@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { auth } from "../../firebase";
 import { useRouter } from "next/navigation";
-import { GoogleOutlined, EyeOutlined, EyeInvisibleOutlined } from "@ant-design/icons";
+import { GoogleIcon, EyeIcon, EyeOffIcon } from "../../components/ui/icons";
 
 const ERROR_MESSAGES = {
   "auth/email-already-in-use": "Este correo ya está registrado.",
@@ -10,15 +10,18 @@ const ERROR_MESSAGES = {
   "auth/user-not-found": "No existe una cuenta con ese correo.",
   "auth/wrong-password": "Contraseña incorrecta.",
   "auth/too-many-requests": "Demasiados intentos. Intenta más tarde.",
-  "auth/popup-closed-by-user": null, // silenciar
+  "auth/popup-closed-by-user": null,
 };
 
 const friendlyError = (code) =>
   ERROR_MESSAGES[code] ?? "Ocurrió un error. Intenta de nuevo.";
 
+const fieldClass =
+  "w-full bg-ki-black text-pearl-white border border-border-ki rounded px-4 py-3 text-sm outline-none focus:border-ki-purple hover:border-ki-purple transition-colors placeholder-light-gray";
+
 export default function SignIn() {
   const router = useRouter();
-  const [mode, setMode] = useState("login"); // "login" | "register"
+  const [mode, setMode] = useState("login");
   const [form, setForm] = useState({ displayName: "", email: "", password: "" });
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState(null);
@@ -78,14 +81,12 @@ export default function SignIn() {
   return (
     <div className="w-full h-full flex flex-col justify-center items-center px-6">
       <div className="w-full max-w-[420px]">
-        {/* Header */}
+        <img src="/logo-kitechnologies-white.svg" alt="Logo de Ki technologies" className="block mx-auto w-64 h-auto" />
         <h1 className="text-3xl font-bold mb-2 text-pearl-white text-center">
           {isRegister ? "Crear cuenta" : "Iniciar sesión"}
         </h1>
         <p className="text-light-gray text-sm text-center mb-8">
-          {isRegister
-            ? "¿Ya tienes cuenta? "
-            : "¿No tienes cuenta? "}
+          {isRegister ? "¿Ya tienes cuenta? " : "¿No tienes cuenta? "}
           <button
             type="button"
             onClick={() => { setMode(isRegister ? "login" : "register"); setError(null); }}
@@ -95,7 +96,6 @@ export default function SignIn() {
           </button>
         </p>
 
-        {/* Form */}
         <form onSubmit={handleEmailSubmit} className="flex flex-col gap-3 mb-4">
           {isRegister && (
             <input
@@ -105,7 +105,7 @@ export default function SignIn() {
               value={form.displayName}
               onChange={handleChange}
               required
-              className="w-full bg-ki-black text-pearl-white border border-border-ki rounded px-4 py-3 text-sm outline-none focus:border-ki-purple hover:border-ki-purple transition-colors placeholder-light-gray"
+              className={fieldClass}
             />
           )}
           <input
@@ -115,7 +115,7 @@ export default function SignIn() {
             value={form.email}
             onChange={handleChange}
             required
-            className="w-full bg-ki-black text-pearl-white border border-border-ki rounded px-4 py-3 text-sm outline-none focus:border-ki-purple hover:border-ki-purple transition-colors placeholder-light-gray"
+            className={fieldClass}
           />
           <div className="relative">
             <input
@@ -125,20 +125,18 @@ export default function SignIn() {
               value={form.password}
               onChange={handleChange}
               required
-              className="w-full bg-ki-black text-pearl-white border border-border-ki rounded px-4 py-3 text-sm outline-none focus:border-ki-purple hover:border-ki-purple transition-colors placeholder-light-gray pr-10"
+              className={`${fieldClass} pr-10`}
             />
             <button
               type="button"
               onClick={() => setShowPass((v) => !v)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-light-gray hover:text-pearl-white transition-colors bg-transparent border-none cursor-pointer"
             >
-              {showPass ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+              {showPass ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
             </button>
           </div>
 
-          {error && (
-            <p className="text-red-400 text-sm text-center">{error}</p>
-          )}
+          {error && <p className="text-red-400 text-sm text-center">{error}</p>}
 
           <button
             type="submit"
@@ -149,21 +147,19 @@ export default function SignIn() {
           </button>
         </form>
 
-        {/* Divider */}
         <div className="flex items-center gap-3 mb-4">
           <div className="flex-1 h-px bg-border-ki" />
           <span className="text-light-gray text-xs">o continúa con</span>
           <div className="flex-1 h-px bg-border-ki" />
         </div>
 
-        {/* Google */}
         <button
           type="button"
           onClick={handleGoogle}
           disabled={loading}
           className="w-full h-[50px] flex items-center justify-center gap-2 bg-transparent border border-border-ki text-pearl-white rounded text-base font-medium hover:border-ki-purple hover:bg-ki-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
-          <GoogleOutlined />
+          <GoogleIcon />
           Google
         </button>
       </div>

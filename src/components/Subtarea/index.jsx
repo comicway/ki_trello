@@ -1,13 +1,13 @@
 import { useState, useContext } from "react";
-import { DatePicker, Dropdown, Avatar } from "antd";
-import { CalendarOutlined, UserOutlined } from "@ant-design/icons";
 import moment from "moment";
-import dayjs from "dayjs";
-import { panelDayjs, toDayjs } from "../../utils/datePicker";
 import SubtareaModal from "../SubtareaModal";
 import DoneToggle from "../DoneToggle";
+import MemberAvatar from "../MemberAvatar";
+import Dropdown from "../ui/Dropdown";
+import DateField from "../ui/DateField";
 import { UserContext } from "../../providers/UserProvider";
 import { buildDoneUpdate } from "../../utils/completion";
+import { CalendarIcon, UserIcon } from "../ui/icons";
 
 const dateLabel = (date) => {
   if (!date) return null;
@@ -17,7 +17,6 @@ const dateLabel = (date) => {
 
 export default function Subtarea({ subtask, members, onUpdate, onDelete, boardKey, listKey, tareaKey }) {
   const [datePickerOpen, setDatePickerOpen] = useState(false);
-  const [pickerValue, setPickerValue] = useState(() => dayjs());
   const [panelOpen, setPanelOpen] = useState(false);
   const currentUser = useContext(UserContext);
 
@@ -27,7 +26,6 @@ export default function Subtarea({ subtask, members, onUpdate, onDelete, boardKe
 
   const handleDateChange = (date) => {
     onUpdate(subtask.id, { dueDate: date ? date.toISOString() : null });
-    if (date) setPickerValue(panelDayjs(date));
     setDatePickerOpen(false);
   };
 
@@ -42,15 +40,10 @@ export default function Subtarea({ subtask, members, onUpdate, onDelete, boardKe
     ...(members?.map((member, i) => ({
       key: member.email || String(i),
       label: (
-        <div className="flex items-center gap-2">
-          <Avatar
-            src={member.photoURL}
-            icon={!member.photoURL && <UserOutlined />}
-            size={20}
-            className="bg-ki-purple flex-shrink-0"
-          />
+        <span className="flex items-center gap-2">
+          <MemberAvatar member={member} size={20} borderClass="border-ki-black" />
           <span>{member.displayName || member.email}</span>
-        </div>
+        </span>
       ),
       onClick: () => handleAssigneeSelect(member.email),
     })) || []),
@@ -60,11 +53,7 @@ export default function Subtarea({ subtask, members, onUpdate, onDelete, boardKe
     <>
       <div className="mb-3 rounded-md bg-dark-blue border border-border-ki">
         <div className="flex items-center gap-2 px-4 py-3 text-pearl-white">
-          {/* Título — izquierda, abre panel completo */}
-          <div
-            className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer"
-            onClick={() => setPanelOpen(true)}
-          >
+          <div className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer" onClick={() => setPanelOpen(true)}>
             <DoneToggle
               done={!!subtask.done}
               size="sm"
@@ -79,13 +68,10 @@ export default function Subtarea({ subtask, members, onUpdate, onDelete, boardKe
               }
             />
             <span className={`font-medium truncate block ${subtask.done ? "line-through text-light-gray" : ""}`}>
-              {subtask.title || (
-                <span className="text-light-gray italic text-sm">Sin título</span>
-              )}
+              {subtask.title || <span className="text-light-gray italic text-sm">Sin título</span>}
             </span>
           </div>
 
-          {/* Fecha — justo antes del miembro */}
           <div className="relative flex-shrink-0" onClick={(e) => e.stopPropagation()}>
             <button
               type="button"
@@ -93,56 +79,35 @@ export default function Subtarea({ subtask, members, onUpdate, onDelete, boardKe
               onClick={() => setDatePickerOpen(true)}
               className="flex items-center text-light-gray hover:text-pearl-white transition-colors cursor-pointer bg-transparent border-none text-xs font-medium"
             >
-              {dateText ? (
-                <span className="text-xs leading-none">{dateText}</span>
-              ) : (
-                <CalendarOutlined className="text-sm" />
-              )}
+              {dateText ? <span className="text-xs leading-none">{dateText}</span> : <CalendarIcon className="h-4 w-4" />}
             </button>
-            <DatePicker
+            <DateField
+              value={subtask.dueDate}
               open={datePickerOpen}
-              onOpenChange={(open) => {
-                setDatePickerOpen(open);
-                if (open) setPickerValue(panelDayjs(subtask.dueDate));
-              }}
-              defaultPickerValue={panelDayjs(subtask.dueDate)}
-              pickerValue={pickerValue}
-              onPickerValueChange={setPickerValue}
-              value={toDayjs(dueDate)}
+              onOpenChange={setDatePickerOpen}
               onChange={handleDateChange}
-              format={(value) => (value && dayjs().isSame(value, "day") ? "hoy" : value?.format("DD MMM"))}
-              allowClear
-              className="absolute opacity-0 pointer-events-none w-0 h-0 overflow-hidden"
-              classNames={{ popup: { root: "dark-datepicker" } }}
             />
           </div>
 
-          {/* Responsable — derecha */}
           <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
             <Dropdown
-              menu={{
-                className: "bg-ki-black border border-border-ki text-pearl-white",
-                items: assigneeMenuItems,
-              }}
-              trigger={["click"]}
-            >
-              {assignee ? (
-                <Avatar
-                  src={assignee.photoURL}
-                  icon={!assignee.photoURL && <UserOutlined />}
-                  size={28}
-                  className="bg-ki-purple cursor-pointer border border-border-ki"
-                />
-              ) : (
-                <button
-                  type="button"
-                  title="Asignar responsable"
-                  className="w-7 h-7 rounded-full flex items-center justify-center border border-border-ki text-light-gray hover:text-pearl-white hover:border-ki-purple bg-ki-black transition-colors cursor-pointer"
-                >
-                  <UserOutlined className="text-sm" />
-                </button>
-              )}
-            </Dropdown>
+              items={assigneeMenuItems}
+              trigger={
+                assignee ? (
+                  <button type="button" className="rounded-full border-none bg-transparent p-0 cursor-pointer">
+                    <MemberAvatar member={assignee} size={28} borderClass="border-border-ki" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    title="Asignar responsable"
+                    className="w-7 h-7 rounded-full flex items-center justify-center border border-border-ki text-light-gray hover:text-pearl-white hover:border-ki-purple bg-ki-black transition-colors cursor-pointer"
+                  >
+                    <UserIcon className="h-3.5 w-3.5" />
+                  </button>
+                )
+              }
+            />
           </div>
         </div>
       </div>

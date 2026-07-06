@@ -1,18 +1,6 @@
 import { useState, useEffect, useContext } from "react";
-import { Drawer, Input, DatePicker, Select, Avatar } from "antd";
-import {
-  AlignLeftOutlined,
-  CalendarOutlined,
-  SwapOutlined,
-  LinkOutlined,
-  CloseOutlined,
-  UserOutlined,
-  PlusOutlined,
-  UnorderedListOutlined,
-} from "@ant-design/icons";
 import moment from "moment";
-import dayjs from "dayjs";
-import { panelDayjs, toDayjs } from "../../utils/datePicker";
+import Drawer from "../ui/Drawer";
 import Subtarea from "../Subtarea";
 import Comments from "../Comments";
 import LinkPreviewList from "../LinkPreviewList";
@@ -21,11 +9,21 @@ import DoneFooter from "../DoneFooter";
 import ReadyForSalesforceSwitch from "../ReadyForSalesforceSwitch";
 import CountrySelect from "../CountrySelect";
 import MarkdownContent from "../MarkdownContent";
+import AssigneeSelect from "../ui/AssigneeSelect";
 import useResizableDrawer from "../../hooks/useResizableDrawer";
 import { UserContext } from "../../providers/UserProvider";
 import { buildDoneUpdate, isFinalizadoList } from "../../utils/completion";
-
-const { Option } = Select;
+import { inputClass, selectClass } from "../ui/styles";
+import {
+  AlignLeftIcon,
+  CalendarIcon,
+  SwapIcon,
+  LinkIcon,
+  CloseIcon,
+  UserIcon,
+  PlusIcon,
+  ListIcon,
+} from "../ui/icons";
 
 export default function TareaModal(props) {
   const [editingTitle, setEditingTitle] = useState(false);
@@ -65,8 +63,6 @@ export default function TareaModal(props) {
     members,
     handleMoveTareaManual,
   } = props;
-
-  const [pickerValue, setPickerValue] = useState(() => dayjs());
 
   useEffect(() => {
     setTitle(tareaTitle);
@@ -112,14 +108,18 @@ export default function TareaModal(props) {
       doneAt: newDoneAt,
       doneBy: newDoneBy,
       readyForSalesforce:
-        updates.readyForSalesforce !== undefined ? updates.readyForSalesforce : readyForSalesforce,
+        updates.readyForSalesforce !== undefined
+          ? updates.readyForSalesforce
+          : readyForSalesforce,
+      lastEditedBy: currentUser?.displayName || currentUser?.email || null,
+      lastEditedByEmail: currentUser?.email || null,
     };
     return handleEditTarea({ listKey, tareaKey, tarea: updatedTarea });
   };
 
   const handleSubtaskUpdate = (subtaskId, updates) => {
     const updated = subtasks.map((s) =>
-      s.id === subtaskId ? { ...s, ...updates } : s
+      s.id === subtaskId ? { ...s, ...updates } : s,
     );
     setSubtasks(updated);
     handleSave({ subtasks: updated });
@@ -152,15 +152,11 @@ export default function TareaModal(props) {
 
   const handleTitleBlur = () => {
     setEditingTitle(false);
-    if (title !== tareaTitle) {
-      handleSave({ title });
-    }
+    if (title !== tareaTitle) handleSave({ title });
   };
 
   const handleTitleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      handleTitleBlur();
-    }
+    if (e.key === "Enter") handleTitleBlur();
     if (e.key === "Escape") {
       setTitle(tareaTitle);
       setEditingTitle(false);
@@ -181,8 +177,7 @@ export default function TareaModal(props) {
   const handleDateChange = (date) => {
     const next = date ? moment(date.toDate()) : null;
     setDueDate(next);
-    setPickerValue(panelDayjs(date));
-    handleSave({ dueDate: date ? date.toISOString() : null });
+    handleSave({ dueDate: val ? moment(val).toISOString() : null });
   };
 
   useEffect(() => {
@@ -196,12 +191,10 @@ export default function TareaModal(props) {
 
   const handleStatusChange = (newListKey) => {
     if (newListKey === listKey) return;
-
     if (isFinalizadoList(lists, newListKey)) {
       const meta = buildDoneUpdate(true, currentUser, { doneAt, doneBy });
       handleEditTarea({ listKey, tareaKey, tarea: meta });
     }
-
     handleMoveTareaManual(tareaKey, listKey, newListKey);
     handleHideModal();
   };
@@ -214,41 +207,22 @@ export default function TareaModal(props) {
     });
   };
 
-  const customFormat = (value) => {
-    if (!value) return "";
-    if (dayjs().isSame(value, "day")) return "Hoy";
-    return value.format("DD MMM YYYY");
-  };
-
   const handleClose = () => {
     setEditingTitle(false);
     setEditingDescription(false);
     handleHideModal();
   };
 
+  const dateInputValue = dueDate ? moment(dueDate).format("YYYY-MM-DD") : "";
+
   return (
-    <Drawer
-      placement="right"
-      width={drawerWidth}
-      closable={false}
-      onClose={handleClose}
-      open={visible}
-      styles={{
-        content: { backgroundColor: "#1d2125", color: "#b6c2cf" },
-        body: { padding: "24px" },
-      }}
-    >
-      {/* Resize handle on the left edge */}
+    <Drawer open={visible} onClose={handleClose} width={drawerWidth}>
       <div
         onMouseDown={handleResizeMouseDown}
-        style={{
-          position: "absolute", left: 0, top: 0, bottom: 0, width: 6,
-          cursor: "ew-resize", zIndex: 10,
-          background: "transparent",
-        }}
+        className="absolute left-0 top-0 bottom-0 z-20 w-1.5 shrink-0 cursor-ew-resize touch-none"
         title="Arrastrar para redimensionar"
       />
-      {/* Header: Title + icons */}
+
       <div className="flex items-center gap-2 text-pearl-white mb-8">
         <DoneToggle
           done={done}
@@ -258,17 +232,15 @@ export default function TareaModal(props) {
             handleSave({ done: next });
           }}
         />
-
-        {/* Inline-editable title */}
         <div className="flex-1 min-w-0">
           {editingTitle ? (
-            <Input
+            <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               onBlur={handleTitleBlur}
               onKeyDown={handleTitleKeyDown}
               autoFocus
-              className="bg-ki-black text-pearl-white border-ki-purple"
+              className={`${inputClass} border-ki-purple`}
             />
           ) : (
             <span
@@ -280,78 +252,55 @@ export default function TareaModal(props) {
             </span>
           )}
         </div>
-
-        {/* Copy link icon */}
         <button
+          type="button"
           onClick={handleCopyLink}
           title={copied ? "¡Enlace copiado!" : "Copiar enlace"}
           className="flex-shrink-0 p-1.5 rounded text-light-gray hover:text-pearl-white hover:bg-ki-black transition-colors border-none bg-transparent cursor-pointer"
         >
-          <LinkOutlined className={copied ? "text-green-400" : ""} />
+          <LinkIcon className={copied ? "text-green-400" : "h-4 w-4"} />
         </button>
-
-        {/* Close icon */}
         <button
+          type="button"
           onClick={handleClose}
           title="Cerrar panel"
           className="flex-shrink-0 p-1.5 rounded text-light-gray hover:text-pearl-white hover:bg-ki-black transition-colors border-none bg-transparent cursor-pointer"
         >
-          <CloseOutlined />
+          <CloseIcon className="h-4 w-4" />
         </button>
       </div>
 
-      {/* Responsable + Estado */}
       <div className="flex flex-row gap-2 mb-6">
         {members && members.length > 0 && (
           <div className="flex-1 min-w-0">
             <h4 className="flex items-center gap-2 text-pearl-white font-semibold mb-3">
-              <UserOutlined />
+              <UserIcon className="h-4 w-4" />
               <span>Responsable</span>
             </h4>
-            <Select
+            <AssigneeSelect
+              members={members}
               value={assigneeEmail}
               onChange={handleAssigneeChange}
-              placeholder="Sin responsable asignado"
-              allowClear
-              className="w-full"
-              styles={{ popup: { backgroundColor: "#22272b" } }}
-            >
-              {members.map((member, i) => (
-                <Option key={i} value={member.email}>
-                  <div className="flex items-center gap-2">
-                    <Avatar
-                      src={member.photoURL}
-                      icon={!member.photoURL && <UserOutlined />}
-                      size={20}
-                      className="bg-ki-purple flex-shrink-0"
-                    />
-                    <span>{member.displayName || member.email}</span>
-                  </div>
-                </Option>
-              ))}
-            </Select>
+            />
           </div>
         )}
 
         <div className="flex-1 min-w-0">
           <h4 className="flex items-center gap-2 text-pearl-white font-semibold mb-3">
-            <SwapOutlined />
+            <SwapIcon className="h-4 w-4" />
             <span>Estado</span>
           </h4>
-          <Select
+          <select
             value={listKey}
-            onChange={handleStatusChange}
-            className="w-full"
-            styles={{ popup: { backgroundColor: "#22272b" } }}
-            classNames={{ popup: { root: "dark-select-dropdown" } }}
+            onChange={(e) => handleStatusChange(e.target.value)}
+            className={selectClass}
           >
-            {lists &&
-              lists.map((list) => (
-                <Option key={list.key} value={list.key}>
-                  {list.title}
-                </Option>
-              ))}
-          </Select>
+            {lists?.map((list) => (
+              <option key={list.key} value={list.key}>
+                {list.title}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -386,10 +335,9 @@ export default function TareaModal(props) {
         </div>
       </div>
 
-      {/* Description */}
       <div>
         <h4 className="flex items-center gap-2 text-pearl-white font-semibold mb-3">
-          <AlignLeftOutlined />
+          <AlignLeftIcon className="h-4 w-4" />
           <span>Descripción</span>
         </h4>
         <div>
@@ -406,13 +354,13 @@ export default function TareaModal(props) {
               <div className="flex gap-2">
                 <button
                   type="submit"
-                  className="px-4 py-1.5 bg-ki-purple border border-border-ki text-pearl-white rounded text-sm font-medium hover:bg-ki-pastel transition-colors"
+                  className="px-4 py-1.5 bg-ki-purple border border-border-ki text-pearl-white rounded text-sm font-medium hover:bg-ki-pastel transition-colors cursor-pointer"
                 >
                   Guardar
                 </button>
                 <button
                   type="button"
-                  className="px-4 py-1.5 bg-transparent border border-border-ki text-light-gray rounded text-sm font-medium hover:border-alert-danger hover:text-alert-danger transition-colors"
+                  className="px-4 py-1.5 bg-transparent border border-border-ki text-light-gray rounded text-sm font-medium hover:border-alert-danger hover:text-alert-danger transition-colors cursor-pointer"
                   onClick={() => {
                     setEditingDescription(false);
                     setDescription(tareaDescription);
@@ -447,7 +395,10 @@ export default function TareaModal(props) {
               }
             }}
             onDelete={(url) => {
-              const updated = description.replace(url, "").replace(/\s{2,}/g, " ").trim();
+              const updated = description
+                .replace(url, "")
+                .replace(/\s{2,}/g, " ")
+                .trim();
               setDescription(updated);
               handleSave({ description: updated });
             }}
@@ -455,10 +406,9 @@ export default function TareaModal(props) {
         </div>
       </div>
 
-      {/* Subtareas */}
       <div className="mt-8">
         <h4 className="flex items-center gap-2 text-pearl-white font-semibold mb-3">
-          <UnorderedListOutlined />
+          <ListIcon className="h-4 w-4" />
           <span>Subtareas</span>
         </h4>
 
@@ -480,12 +430,11 @@ export default function TareaModal(props) {
           onClick={handleAddSubtask}
           className="w-full flex items-center gap-2 px-4 py-3 rounded-md bg-ki-black border border-border-ki border-dashed text-light-gray hover:text-pearl-white hover:border-ki-purple transition-colors cursor-pointer"
         >
-          <PlusOutlined />
+          <PlusIcon className="h-4 w-4" />
           <span>Agregar subtarea</span>
         </button>
       </div>
 
-      {/* Comentarios */}
       <Comments
         boardKey={boardKey}
         listKey={listKey}
@@ -501,7 +450,6 @@ export default function TareaModal(props) {
         }}
       />
 
-      {/* Done footer */}
       <DoneFooter doneBy={doneBy} doneAt={doneAt} />
     </Drawer>
   );

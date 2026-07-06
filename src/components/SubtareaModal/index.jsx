@@ -1,26 +1,24 @@
 import { useState, useEffect, useContext } from "react";
-import { Drawer, Input, DatePicker, Select, Avatar } from "antd";
-import {
-  AlignLeftOutlined,
-  CalendarOutlined,
-  CloseOutlined,
-  DeleteOutlined,
-  UserOutlined,
-} from "@ant-design/icons";
 import moment from "moment";
-import dayjs from "dayjs";
-import { panelDayjs, toDayjs } from "../../utils/datePicker";
+import Drawer from "../ui/Drawer";
 import Comments from "../Comments";
 import LinkPreviewList from "../LinkPreviewList";
 import DoneToggle from "../DoneToggle";
 import DoneFooter from "../DoneFooter";
 import ReadyForSalesforceSwitch from "../ReadyForSalesforceSwitch";
 import MarkdownContent from "../MarkdownContent";
-import { buildDoneUpdate } from "../../utils/completion";
+import AssigneeSelect from "../ui/AssigneeSelect";
 import useResizableDrawer from "../../hooks/useResizableDrawer";
 import { UserContext } from "../../providers/UserProvider";
-
-const { Option } = Select;
+import { buildDoneUpdate } from "../../utils/completion";
+import { inputClass, selectClass } from "../ui/styles";
+import {
+  AlignLeftIcon,
+  CalendarIcon,
+  CloseIcon,
+  DeleteIcon,
+  UserIcon,
+} from "../ui/icons";
 
 export default function SubtareaModal({
   visible,
@@ -39,7 +37,6 @@ export default function SubtareaModal({
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState(null);
   const [assigneeEmail, setAssigneeEmail] = useState(null);
-  const [pickerValue, setPickerValue] = useState(() => dayjs());
   const [drawerWidth, handleResizeMouseDown] = useResizableDrawer(520);
   const currentUser = useContext(UserContext);
 
@@ -49,7 +46,6 @@ export default function SubtareaModal({
     setDescription(subtask.description || "");
     setDueDate(subtask.dueDate ? moment(subtask.dueDate) : null);
     setAssigneeEmail(subtask.assigneeEmail || null);
-    setPickerValue(panelDayjs(subtask.dueDate));
   }, [subtask]);
 
   if (!subtask) return null;
@@ -64,9 +60,18 @@ export default function SubtareaModal({
     }
     onUpdate(subtask.id, {
       title: updates.title !== undefined ? updates.title : title,
-      description: updates.description !== undefined ? updates.description : description,
-      dueDate: updates.dueDate !== undefined ? updates.dueDate : dueDate ? dueDate.toISOString() : null,
-      assigneeEmail: updates.assigneeEmail !== undefined ? updates.assigneeEmail : assigneeEmail,
+      description:
+        updates.description !== undefined ? updates.description : description,
+      dueDate:
+        updates.dueDate !== undefined
+          ? updates.dueDate
+          : dueDate
+            ? dueDate.toISOString()
+            : null,
+      assigneeEmail:
+        updates.assigneeEmail !== undefined
+          ? updates.assigneeEmail
+          : assigneeEmail,
       ...(updates.readyForSalesforce !== undefined
         ? { readyForSalesforce: updates.readyForSalesforce }
         : {}),
@@ -93,22 +98,16 @@ export default function SubtareaModal({
     handleSave({ description });
   };
 
-  const handleDateChange = (date) => {
-    const next = date ? moment(date.toDate()) : null;
+  const handleDateChange = (e) => {
+    const val = e.target.value;
+    const next = val ? moment(val) : null;
     setDueDate(next);
-    setPickerValue(panelDayjs(date));
-    handleSave({ dueDate: date ? date.toISOString() : null });
+    handleSave({ dueDate: val ? moment(val).toISOString() : null });
   };
 
   const handleAssigneeChange = (email) => {
     setAssigneeEmail(email || null);
     handleSave({ assigneeEmail: email || null });
-  };
-
-  const customFormat = (value) => {
-    if (!value) return "";
-    if (dayjs().isSame(value, "day")) return "hoy";
-    return value.format("DD MMM");
   };
 
   const handleClose = () => {
@@ -117,28 +116,21 @@ export default function SubtareaModal({
     onClose();
   };
 
+  const dateInputValue = dueDate ? moment(dueDate).format("YYYY-MM-DD") : "";
+
   return (
     <Drawer
-      placement="right"
-      width={drawerWidth}
-      closable={false}
-      onClose={handleClose}
       open={visible}
-      styles={{
-        content: { backgroundColor: "#1d2125", color: "#b6c2cf" },
-        body: { padding: "24px" },
-      }}
-      zIndex={1001}
+      onClose={handleClose}
+      width={drawerWidth}
+      zIndex={1300}
     >
-      {/* Resize handle */}
       <div
         onMouseDown={handleResizeMouseDown}
-        style={{
-          position: "absolute", left: 0, top: 0, bottom: 0, width: 6,
-          cursor: "ew-resize", zIndex: 10, background: "transparent",
-        }}
+        className="absolute left-0 top-0 bottom-0 z-20 w-1.5 shrink-0 cursor-ew-resize touch-none"
         title="Arrastrar para redimensionar"
       />
+
       <div className="flex items-center gap-2 text-pearl-white mb-8">
         <DoneToggle
           done={!!subtask.done}
@@ -146,13 +138,13 @@ export default function SubtareaModal({
         />
         <div className="flex-1 min-w-0">
           {editingTitle ? (
-            <Input
+            <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               onBlur={handleTitleBlur}
               onKeyDown={handleTitleKeyDown}
               autoFocus
-              className="bg-ki-black text-pearl-white border-ki-purple"
+              className={`${inputClass} border-ki-purple`}
             />
           ) : (
             <span
@@ -165,77 +157,54 @@ export default function SubtareaModal({
           )}
         </div>
         <button
+          type="button"
           onClick={onDelete}
           title="Eliminar subtarea"
           className="flex-shrink-0 p-1.5 rounded text-light-gray hover:text-alert-danger hover:bg-ki-black transition-colors border-none bg-transparent cursor-pointer"
         >
-          <DeleteOutlined />
+          <DeleteIcon className="h-4 w-4" />
         </button>
         <button
+          type="button"
           onClick={handleClose}
           title="Cerrar panel"
           className="flex-shrink-0 p-1.5 rounded text-light-gray hover:text-pearl-white hover:bg-ki-black transition-colors border-none bg-transparent cursor-pointer"
         >
-          <CloseOutlined />
+          <CloseIcon className="h-4 w-4" />
         </button>
       </div>
 
       {members && members.length > 0 && (
         <div className="mb-6">
           <h4 className="flex items-center gap-2 text-pearl-white font-semibold mb-3">
-            <UserOutlined />
+            <UserIcon className="h-4 w-4" />
             <span>Responsable</span>
           </h4>
-          <Select
+          <AssigneeSelect
+            members={members}
             value={assigneeEmail}
             onChange={handleAssigneeChange}
-            placeholder="Sin responsable asignado"
-            allowClear
-            className="w-full"
-            styles={{ popup: { backgroundColor: "#22272b" } }}
-          >
-            {members.map((member, i) => (
-              <Option key={i} value={member.email}>
-                <div className="flex items-center gap-2">
-                  <Avatar
-                    src={member.photoURL}
-                    icon={!member.photoURL && <UserOutlined />}
-                    size={20}
-                    className="bg-ki-purple flex-shrink-0"
-                  />
-                  <span>{member.displayName || member.email}</span>
-                </div>
-              </Option>
-            ))}
-          </Select>
+          />
         </div>
       )}
 
       <div className="mb-8">
         <h4 className="flex items-center gap-2 text-pearl-white font-semibold mb-3">
-          <CalendarOutlined />
+          <CalendarIcon className="h-4 w-4" />
           <span>Fecha de entrega</span>
         </h4>
-        <DatePicker
-          value={toDayjs(dueDate)}
-          defaultPickerValue={panelDayjs(dueDate)}
-          pickerValue={pickerValue}
-          onPickerValueChange={setPickerValue}
-          onOpenChange={(open) => {
-            if (open) setPickerValue(panelDayjs(dueDate));
-          }}
+        <input
+          type="date"
+          value={dateInputValue}
           onChange={handleDateChange}
-          format={customFormat}
-          placeholder="Sin fecha de entrega"
-          allowClear
-          className="w-full bg-ki-black text-pearl-white border-border-ki hover:border-ki-purple focus:border-ki-purple transition-colors h-10 px-3 cursor-pointer"
-          classNames={{ popup: { root: "dark-datepicker" } }}
+          onClick={(e) => e.target.showPicker && e.target.showPicker()}
+          className={`${selectClass} [color-scheme:dark] cursor-pointer`}
         />
       </div>
 
       <div>
         <h4 className="flex items-center gap-2 text-pearl-white font-semibold mb-3">
-          <AlignLeftOutlined />
+          <AlignLeftIcon className="h-4 w-4" />
           <span>Descripción</span>
         </h4>
         {editingDescription ? (
@@ -251,13 +220,13 @@ export default function SubtareaModal({
             <div className="flex gap-2">
               <button
                 type="submit"
-                className="px-4 py-1.5 bg-ki-purple border border-border-ki text-pearl-white rounded text-sm font-medium hover:bg-ki-pastel transition-colors"
+                className="px-4 py-1.5 bg-ki-purple border border-border-ki text-pearl-white rounded text-sm font-medium hover:bg-ki-pastel transition-colors cursor-pointer"
               >
                 Guardar
               </button>
               <button
                 type="button"
-                className="px-4 py-1.5 bg-transparent border border-border-ki text-light-gray rounded text-sm font-medium hover:border-alert-danger hover:text-alert-danger transition-colors"
+                className="px-4 py-1.5 bg-transparent border border-border-ki text-light-gray rounded text-sm font-medium hover:border-alert-danger hover:text-alert-danger transition-colors cursor-pointer"
                 onClick={() => {
                   setEditingDescription(false);
                   setDescription(subtask.description || "");
@@ -292,14 +261,16 @@ export default function SubtareaModal({
             }
           }}
           onDelete={(url) => {
-            const updated = description.replace(url, "").replace(/\s{2,}/g, " ").trim();
+            const updated = description
+              .replace(url, "")
+              .replace(/\s{2,}/g, " ")
+              .trim();
             setDescription(updated);
             handleSave({ description: updated });
           }}
         />
       </div>
 
-      {/* Comentarios */}
       <Comments
         boardKey={boardKey}
         listKey={listKey}
@@ -313,7 +284,6 @@ export default function SubtareaModal({
         onChange={(next) => handleSave({ readyForSalesforce: next })}
       />
 
-      {/* Done footer */}
       <DoneFooter
         doneBy={subtask.doneBy}
         doneAt={subtask.doneAt}

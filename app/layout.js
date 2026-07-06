@@ -3,7 +3,8 @@ import Providers from "./providers";
 
 export const metadata = {
   title: "Ki Trello",
-  description: "Collaborative boards and tasks",
+  description: "Tablero colaborativo para gestion de tareas",
+  icons: { icon: "/favicon.png" },
 };
 
 export const dynamic = "force-dynamic";

@@ -1,23 +1,25 @@
 import { useState, useEffect, useContext, useRef } from "react";
-import { Avatar } from "antd";
-import {
-  MessageOutlined,
-  UserOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  CheckOutlined,
-  CloseOutlined,
-} from "@ant-design/icons";
 import moment from "moment";
 import { db } from "../../firebase";
 import { UserContext } from "../../providers/UserProvider";
+import { extractMentionTargetsFromText } from "../../lib/notifications/mentions";
+import { requestCommentMentionNotifications } from "../../lib/notifications/requestCommentMentionNotifications";
 import MarkdownContent from "../MarkdownContent";
+import MemberAvatar from "../MemberAvatar";
+import {
+  MessageIcon,
+  EditIcon,
+  DeleteIcon,
+  CheckIcon,
+  CloseIcon,
+} from "../ui/icons";
 
 // ─── URL helpers ──────────────────────────────────────────────────────────────
 
 const URL_RE = /https?:\/\/[^\s]+/g;
 
-const extractUrls = (text) => [...(text?.matchAll(URL_RE) || [])].map((m) => m[0]);
+const extractUrls = (text) =>
+  [...(text?.matchAll(URL_RE) || [])].map((m) => m[0]);
 
 // Renders text with clickable hyperlinks
 function LinkedText({ text }) {
@@ -49,12 +51,25 @@ function LinkedText({ text }) {
 // ─── LinkPreview ──────────────────────────────────────────────────────────────
 
 function LinkPreview({ url, onEdit, onDelete }) {
-  const hostname = (() => { try { return new URL(url).hostname; } catch { return url; } })();
+  const hostname = (() => {
+    try {
+      return new URL(url).hostname;
+    } catch {
+      return url;
+    }
+  })();
   const faviconSrc = `https://www.google.com/s2/favicons?domain=${hostname}&sz=16`;
 
   return (
     <div className="flex items-center gap-2 mt-1 px-3 py-2 bg-ki-black border border-border-ki rounded text-sm group">
-      <img src={faviconSrc} alt="" className="w-4 h-4 flex-shrink-0" onError={(e) => { e.target.style.display = "none"; }} />
+      <img
+        src={faviconSrc}
+        alt=""
+        className="w-4 h-4 flex-shrink-0"
+        onError={(e) => {
+          e.target.style.display = "none";
+        }}
+      />
       <a
         href={url}
         target="_blank"
@@ -68,21 +83,27 @@ function LinkPreview({ url, onEdit, onDelete }) {
         {onEdit && (
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onEdit(url); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(url);
+            }}
             title="Editar URL"
             className="p-1 rounded text-light-gray hover:text-pearl-white hover:bg-[#2c333a] border-none bg-transparent cursor-pointer transition-colors"
           >
-            <EditOutlined className="text-xs" />
+            <EditIcon className="h-3 w-3" />
           </button>
         )}
         {onDelete && (
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onDelete(url); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(url);
+            }}
             title="Eliminar URL"
             className="p-1 rounded text-light-gray hover:text-alert-danger hover:bg-[#2c333a] border-none bg-transparent cursor-pointer transition-colors"
           >
-            <DeleteOutlined className="text-xs" />
+            <DeleteIcon className="h-3 w-3" />
           </button>
         )}
       </div>
@@ -115,7 +136,9 @@ function MentionTextarea({ value, onChange, onSubmit, members, placeholder }) {
   const filtered =
     mentionQuery !== null
       ? (members || []).filter((m) =>
-          (m.displayName || m.email).toLowerCase().includes(mentionQuery.toLowerCase())
+          (m.displayName || m.email)
+            .toLowerCase()
+            .includes(mentionQuery.toLowerCase()),
         )
       : [];
 
@@ -128,21 +151,48 @@ function MentionTextarea({ value, onChange, onSubmit, members, placeholder }) {
 
   const handleKeyDown = (e) => {
     if (filtered.length > 0) {
-      if (e.key === "ArrowDown") { e.preventDefault(); setMenuIndex((i) => Math.min(i + 1, filtered.length - 1)); return; }
-      if (e.key === "ArrowUp") { e.preventDefault(); setMenuIndex((i) => Math.max(i - 1, 0)); return; }
-      if (e.key === "Enter" && mentionQuery !== null) { e.preventDefault(); selectMention(filtered[menuIndex]); return; }
-      if (e.key === "Escape") { setMentionQuery(null); return; }
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setMenuIndex((i) => Math.min(i + 1, filtered.length - 1));
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setMenuIndex((i) => Math.max(i - 1, 0));
+        return;
+      }
+      if (e.key === "Enter" && mentionQuery !== null) {
+        e.preventDefault();
+        selectMention(filtered[menuIndex]);
+        return;
+      }
+      if (e.key === "Escape") {
+        setMentionQuery(null);
+        return;
+      }
     }
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onSubmit(); }
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      onSubmit();
+    }
   };
 
   const selectMention = (member) => {
-    const name = member.displayName || member.email;
+    // Al seleccionar el usuario, se inserta su correo en lugar del nombre
+    // para cumplir con las nuevas reglas de validación estricta de formato email.
+    const identifier = member.email || member.displayName;
     const el = textareaRef.current;
-    const { newValue, newCursor } = insertMention(value, el.selectionStart, name);
+    const { newValue, newCursor } = insertMention(
+      value,
+      el.selectionStart,
+      identifier,
+    );
     onChange(newValue);
     setMentionQuery(null);
-    setTimeout(() => { el.focus(); el.setSelectionRange(newCursor, newCursor); }, 0);
+    setTimeout(() => {
+      el.focus();
+      el.setSelectionRange(newCursor, newCursor);
+    }, 0);
   };
 
   return (
@@ -163,12 +213,21 @@ function MentionTextarea({ value, onChange, onSubmit, members, placeholder }) {
           {filtered.map((m, i) => (
             <li
               key={m.email}
-              onMouseDown={(e) => { e.preventDefault(); selectMention(m); }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                selectMention(m);
+              }}
               className={`flex items-center gap-2 px-3 py-2 cursor-pointer text-sm transition-colors ${
-                i === menuIndex ? "bg-ki-purple text-pearl-white" : "text-pearl-white hover:bg-ki-black"
+                i === menuIndex
+                  ? "bg-ki-purple text-pearl-white"
+                  : "text-pearl-white hover:bg-ki-black"
               }`}
             >
-              <Avatar src={m.photoURL} icon={!m.photoURL && <UserOutlined />} size={20} className="bg-ki-purple flex-shrink-0" />
+              <MemberAvatar
+                member={m}
+                size={20}
+                borderClass="border-ki-black"
+              />
               <span className="truncate">{m.displayName || m.email}</span>
             </li>
           ))}
@@ -189,7 +248,9 @@ function CommentItem({ comment, currentUser, members, onSave, onDelete }) {
   const member = members?.find((m) => m.email === comment.authorEmail);
   const photo = member?.photoURL || comment.authorPhoto || null;
   const name = member?.displayName || comment.authorName || comment.authorEmail;
-  const date = comment.createdAt ? moment(comment.createdAt).format("DD MMM YYYY, HH:mm") : "";
+  const date = comment.createdAt
+    ? moment(comment.createdAt).format("DD MMM YYYY, HH:mm")
+    : "";
   const edited = !!comment.updatedAt;
   const isOwner = currentUser?.email === comment.authorEmail;
   const urls = extractUrls(comment.text);
@@ -200,15 +261,26 @@ function CommentItem({ comment, currentUser, members, onSave, onDelete }) {
     setTimeout(() => textareaRef.current?.focus(), 0);
   };
 
-  const handleCancel = () => { setEditing(false); setEditText(comment.text); };
+  const handleCancel = () => {
+    setEditing(false);
+    setEditText(comment.text);
+  };
 
   const handleSave = async () => {
     const trimmed = editText.trim();
-    if (!trimmed || trimmed === comment.text) { setEditing(false); return; }
+    if (!trimmed || trimmed === comment.text) {
+      setEditing(false);
+      return;
+    }
     setSaving(true);
-    try { await onSave(comment.id, trimmed); setEditing(false); }
-    catch (err) { console.error("Error editando comentario:", err); }
-    finally { setSaving(false); }
+    try {
+      await onSave(comment.id, trimmed);
+      setEditing(false);
+    } catch (err) {
+      console.error("Error editando comentario:", err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleEditUrl = (url) => {
@@ -220,19 +292,34 @@ function CommentItem({ comment, currentUser, members, onSave, onDelete }) {
   };
 
   const handleDeleteUrl = (url) => {
-    const newText = comment.text.replace(url, "").replace(/\s{2,}/g, " ").trim();
+    const newText = comment.text
+      .replace(url, "")
+      .replace(/\s{2,}/g, " ")
+      .trim();
     onSave(comment.id, newText);
   };
 
   return (
     <div className="flex gap-3">
-      <Avatar src={photo} icon={!photo && <UserOutlined />} size={28} className="bg-ki-purple flex-shrink-0 mt-0.5" />
+      <MemberAvatar
+        member={{
+          photoURL: photo,
+          displayName: name,
+          email: comment.authorEmail,
+        }}
+        size={28}
+        borderClass="border-ki-black"
+        className="mt-0.5"
+      />
       <div className="flex-1 min-w-0">
         {/* Author + date */}
         <div className="flex items-baseline gap-2 mb-1">
-          <span className="text-pearl-white text-sm font-medium truncate">{name}</span>
+          <span className="text-pearl-white text-sm font-medium truncate">
+            {name}
+          </span>
           <span className="text-light-gray text-xs flex-shrink-0">
-            {date}{edited && <span className="ml-1 italic">(editado)</span>}
+            {date}
+            {edited && <span className="ml-1 italic">(editado)</span>}
           </span>
         </div>
 
@@ -244,7 +331,10 @@ function CommentItem({ comment, currentUser, members, onSave, onDelete }) {
               value={editText}
               onChange={(e) => setEditText(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSave(); }
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSave();
+                }
                 if (e.key === "Escape") handleCancel();
               }}
               rows={2}
@@ -257,14 +347,14 @@ function CommentItem({ comment, currentUser, members, onSave, onDelete }) {
                 disabled={saving}
                 className="flex items-center gap-1 px-3 py-1 bg-ki-purple text-pearl-white rounded text-xs font-medium hover:bg-ki-pastel transition-colors disabled:opacity-40 cursor-pointer border-none"
               >
-                <CheckOutlined /> Guardar
+                <CheckIcon className="h-3 w-3" /> Guardar
               </button>
               <button
                 type="button"
                 onClick={handleCancel}
                 className="flex items-center gap-1 px-3 py-1 bg-transparent border border-border-ki text-light-gray rounded text-xs font-medium hover:text-alert-danger hover:border-alert-danger transition-colors cursor-pointer"
               >
-                <CloseOutlined /> Cancelar
+                <CloseIcon className="h-3 w-3" /> Cancelar
               </button>
             </div>
           </div>
@@ -282,7 +372,7 @@ function CommentItem({ comment, currentUser, members, onSave, onDelete }) {
                     title="Editar comentario"
                     className="p-1 rounded text-light-gray hover:text-pearl-white hover:bg-ki-black border-none bg-transparent cursor-pointer transition-colors"
                   >
-                    <EditOutlined className="text-xs" />
+                    <EditIcon className="h-3 w-3" />
                   </button>
                   <button
                     type="button"
@@ -290,7 +380,7 @@ function CommentItem({ comment, currentUser, members, onSave, onDelete }) {
                     title="Eliminar comentario"
                     className="p-1 rounded text-light-gray hover:text-alert-danger hover:bg-ki-black border-none bg-transparent cursor-pointer transition-colors"
                   >
-                    <DeleteOutlined className="text-xs" />
+                    <DeleteIcon className="h-3 w-3" />
                   </button>
                 </div>
               )}
@@ -317,7 +407,13 @@ function CommentItem({ comment, currentUser, members, onSave, onDelete }) {
 
 // ─── Comments ─────────────────────────────────────────────────────────────────
 
-export default function Comments({ boardKey, listKey, tareaKey, subtaskId = null, members }) {
+export default function Comments({
+  boardKey,
+  listKey,
+  tareaKey,
+  subtaskId = null,
+  members,
+}) {
   const currentUser = useContext(UserContext);
   const [comments, setComments] = useState([]);
   const [text, setText] = useState("");
@@ -333,17 +429,39 @@ export default function Comments({ boardKey, listKey, tareaKey, subtaskId = null
   const handleSubmit = async () => {
     const trimmed = text.trim();
     if (!trimmed || !currentUser) return;
+    const mentionTargets = extractMentionTargetsFromText(
+      trimmed,
+      members || [],
+    );
     const comment = {
       text: trimmed,
       authorEmail: currentUser.email,
       authorName: currentUser.displayName || currentUser.email,
       authorPhoto: currentUser.photoURL || null,
+      mentionedEmails: mentionTargets.map((target) => target.email),
     };
     setSubmitting(true);
     try {
-      const saved = await db.doAddComment(boardKey, listKey, tareaKey, comment, subtaskId);
+      const saved = await db.doAddComment(
+        boardKey,
+        listKey,
+        tareaKey,
+        comment,
+        subtaskId,
+      );
       setComments((prev) => [...prev, saved]);
       setText("");
+
+      if (mentionTargets.length > 0) {
+        requestCommentMentionNotifications({
+          boardId: boardKey,
+          listId: listKey,
+          tareaId: tareaKey,
+          commentId: saved.id,
+          subtaskId,
+          mentionedEmails: mentionTargets.map((target) => target.email),
+        });
+      }
     } catch (err) {
       console.error("Error al guardar comentario:", err);
     } finally {
@@ -352,9 +470,20 @@ export default function Comments({ boardKey, listKey, tareaKey, subtaskId = null
   };
 
   const handleEditSave = async (commentId, newText) => {
-    await db.doEditComment(boardKey, listKey, tareaKey, commentId, newText, subtaskId);
+    await db.doEditComment(
+      boardKey,
+      listKey,
+      tareaKey,
+      commentId,
+      newText,
+      subtaskId,
+    );
     setComments((prev) =>
-      prev.map((c) => c.id === commentId ? { ...c, text: newText, updatedAt: new Date().toISOString() } : c)
+      prev.map((c) =>
+        c.id === commentId
+          ? { ...c, text: newText, updatedAt: new Date().toISOString() }
+          : c,
+      ),
     );
   };
 
@@ -366,7 +495,7 @@ export default function Comments({ boardKey, listKey, tareaKey, subtaskId = null
   return (
     <div className="mt-8">
       <h4 className="flex items-center gap-2 text-pearl-white font-semibold mb-4">
-        <MessageOutlined />
+        <MessageIcon className="h-4 w-4" />
         <span>Comentarios</span>
       </h4>
 

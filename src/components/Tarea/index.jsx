@@ -1,11 +1,11 @@
 import { useState, useEffect, useContext } from "react";
 import { Draggable } from "@hello-pangea/dnd";
-import { Button, Input } from "antd";
-import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import TareaModal from "../TareaModal";
 import DoneToggle from "../DoneToggle";
 import { UserContext } from "../../providers/UserProvider";
 import { buildDoneUpdate } from "../../utils/completion";
+import { inputClass, btnIcon } from "../ui/styles";
+import { EditIcon, DeleteIcon } from "../ui/icons";
 
 export default function Tarea(props) {
   const [showModal, setShowModal] = useState(false);
@@ -89,8 +89,8 @@ export default function Tarea(props) {
             <div className="relative font-medium px-3 py-3 text-pearl-white">
               {editing ? (
                 <form onSubmit={handleSubmitForm}>
-                  <Input
-                    className="bg-ki-black text-pearl-white border-border-ki"
+                  <input
+                    className={inputClass}
                     value={tareaTitle}
                     onChange={handleTitleChange}
                     autoFocus
@@ -110,16 +110,12 @@ export default function Tarea(props) {
                       className="flex gap-1 flex-shrink-0"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <Button
-                        onClick={handleEnableEditing}
-                        icon={<EditOutlined />}
-                        className="bg-transparent border-none text-light-gray hover:bg-ki-black hover:text-pearl-white flex items-center justify-center p-1"
-                      />
-                      <Button
-                        onClick={onDeleteTarea}
-                        icon={<DeleteOutlined />}
-                        className="bg-transparent border-none text-light-gray hover:bg-ki-black hover:text-pearl-white flex items-center justify-center p-1"
-                      />
+                      <button type="button" onClick={handleEnableEditing} className={btnIcon}>
+                        <EditIcon className="h-4 w-4" />
+                      </button>
+                      <button type="button" onClick={onDeleteTarea} className={btnIcon}>
+                        <DeleteIcon className="h-4 w-4" />
+                      </button>
                     </div>
                   )}
                 </div>

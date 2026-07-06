@@ -63,7 +63,7 @@ export default function List(props) {
             handleDeleteList={handleDeleteList}
           />
           <div className="rounded box-border flex flex-col max-h-full relative whitespace-normal">
-            <div className="px-4 flex-auto mb-0 overflow-y-auto overflow-x-hidden z-[1] min-h-0">
+            <div className="px-4 flex-auto mb-0 overflow-y-auto overflow-x-hidden min-h-0">
               <Droppable droppableId={String(listKey)} type="tarea" isDropDisabled={false} isCombineEnabled={false} ignoreContainerClipping={false}>
                 {(provided) => (
                   <div {...provided.droppableProps} ref={provided.innerRef}>

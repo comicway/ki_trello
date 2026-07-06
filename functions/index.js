@@ -1,7 +1,7 @@
 const admin = require("firebase-admin");
-const { onDocumentWritten } = require("firebase-functions/v2/firestore");
+const { onDocumentWritten, onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { defineSecret } = require("firebase-functions/params");
-const { buildEvents } = require("./detectFinalization");
+const { buildTareaEvents, buildCommentEvents } = require("./detectEvents");
 
 admin.initializeApp();
 
@@ -12,6 +12,18 @@ const resolveMemberEmails = (board = {}) => {
   const fromField = board.memberEmails || [];
   const fromMembers = (board.members || []).map((m) => m.email).filter(Boolean);
   return [...new Set([...fromField, ...fromMembers].filter(Boolean))];
+};
+
+const enrichMembers = (board = {}) => {
+  const members = [...(board.members || [])];
+  const known = new Set(members.map((m) => m.email).filter(Boolean));
+
+  resolveMemberEmails(board).forEach((email) => {
+    if (known.has(email)) return;
+    members.push({ email, displayName: email, uid: null, photoURL: null });
+  });
+
+  return members;
 };
 
 const postNotification = async (payload) => {
@@ -35,9 +47,11 @@ const postNotification = async (payload) => {
     const body = await response.text();
     throw new Error(`Webhook failed (${response.status}): ${body}`);
   }
+
+  return response.json().catch(() => ({}));
 };
 
-const loadContext = async (boardId, listId) => {
+const loadBoardListContext = async (boardId, listId) => {
   const db = admin.firestore();
   const [boardSnap, listSnap] = await Promise.all([
     db.doc(`boards/${boardId}`).get(),
@@ -51,14 +65,27 @@ const loadContext = async (boardId, listId) => {
     boardTitle: board.title || "Board",
     listTitle: list.title || "Lista",
     listIsFinalizado: list.title?.trim().toLowerCase() === "finalizado",
-    members: board.members || [],
+    members: enrichMembers(board),
     memberEmails: resolveMemberEmails(board),
     boardId,
     listId,
   };
 };
 
-exports.onTareaFinalized = onDocumentWritten(
+const dispatchEvents = async (events, context) => {
+  if (events.length === 0) return;
+
+  await Promise.all(
+    events.map((event) =>
+      postNotification({
+        ...context,
+        ...event,
+      })
+    )
+  );
+};
+
+exports.onTareaNotification = onDocumentWritten(
   {
     document: "boards/{boardId}/lists/{listId}/tareas/{tareaId}",
     secrets: [notificationWebhookUrl, notificationWebhookSecret],
@@ -72,22 +99,107 @@ exports.onTareaFinalized = onDocumentWritten(
     const { boardId, listId, tareaId } = event.params;
 
     try {
-      const context = await loadContext(boardId, listId);
-      const events = buildEvents(before, after, context.listIsFinalizado);
-      if (events.length === 0) return;
+      const context = await loadBoardListContext(boardId, listId);
+      const events = buildTareaEvents(before, after, {
+        ...context,
+        tareaId,
+      });
 
-      await Promise.all(
-        events.map((item) =>
-          postNotification({
-            ...context,
-            tareaId,
-            ...item,
-          })
-        )
-      );
+      await dispatchEvents(events, { ...context, tareaId });
     } catch (error) {
-      console.error("onTareaFinalized error:", error);
+      console.error("onTareaNotification error:", error);
       throw error;
     }
   }
 );
+
+const handleCommentCreated = async ({ boardId, listId, tareaId, commentId, subtaskId, comment }) => {
+  const db = admin.firestore();
+  const context = await loadBoardListContext(boardId, listId);
+  const tareaSnap = await db.doc(`boards/${boardId}/lists/${listId}/tareas/${tareaId}`).get();
+  const tarea = tareaSnap.data() || {};
+
+  let itemTitle = tarea.title || "Sin título";
+  let taskAssigneeEmail = tarea.assigneeEmail || null;
+  if (subtaskId) {
+    const sub = (tarea.subtasks || []).find((s) => s.id === subtaskId);
+    itemTitle = sub?.title || itemTitle;
+    taskAssigneeEmail = sub?.assigneeEmail || taskAssigneeEmail;
+  }
+
+  const events = buildCommentEvents(comment, {
+    ...context,
+    tareaId,
+    subtaskId,
+    commentId,
+    itemTitle,
+    taskAssigneeEmail,
+  });
+
+  console.info("mention_comment_scan", {
+    boardId,
+    tareaId,
+    commentId,
+    subtaskId: subtaskId || null,
+    memberCount: context.members?.length || 0,
+    storedMentions: comment.mentionedEmails || [],
+    resolvedEvents: events.map((event) => ({
+      parsedTargetEmails: event.parsedTargetEmails || [],
+    })),
+    eventCount: events.length,
+  });
+
+  if (events.length === 0) {
+    console.warn("mention_comment_no_targets", {
+      commentId,
+      textPreview: comment.text?.slice(0, 80) || "",
+    });
+    return;
+  }
+
+  await dispatchEvents(events, { ...context, tareaId, subtaskId, comment });
+};
+
+exports.onTareaCommentCreated = onDocumentCreated(
+  {
+    document: "boards/{boardId}/lists/{listId}/tareas/{tareaId}/comments/{commentId}",
+    secrets: [notificationWebhookUrl, notificationWebhookSecret],
+  },
+  async (event) => {
+    const comment = event.data?.data();
+    if (!comment) return;
+
+    const { boardId, listId, tareaId, commentId } = event.params;
+
+    try {
+      await handleCommentCreated({ boardId, listId, tareaId, commentId, subtaskId: null, comment });
+    } catch (error) {
+      console.error("onTareaCommentCreated error:", error);
+      throw error;
+    }
+  }
+);
+
+exports.onSubtaskCommentCreated = onDocumentCreated(
+  {
+    document:
+      "boards/{boardId}/lists/{listId}/tareas/{tareaId}/subtaskComments/{subtaskId}/comments/{commentId}",
+    secrets: [notificationWebhookUrl, notificationWebhookSecret],
+  },
+  async (event) => {
+    const comment = event.data?.data();
+    if (!comment) return;
+
+    const { boardId, listId, tareaId, subtaskId, commentId } = event.params;
+
+    try {
+      await handleCommentCreated({ boardId, listId, tareaId, commentId, subtaskId, comment });
+    } catch (error) {
+      console.error("onSubtaskCommentCreated error:", error);
+      throw error;
+    }
+  }
+);
+
+// Backward-compatible export name
+exports.onTareaFinalized = exports.onTareaNotification;

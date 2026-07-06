@@ -1,15 +1,26 @@
+"use client";
+
 import Link from "next/link";
-import { UserOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import dynamic from "next/dynamic";
+import { UserIcon, CheckCircleIcon } from "../ui/icons";
 import MemberAvatar from "../MemberAvatar";
+
+const RecentNotifications = dynamic(() => import("../RecentNotifications"), {
+  ssr: false,
+  loading: () => (
+    <section className="bg-ki-black border border-border-ki rounded-lg p-4 mt-6">
+      <p className="text-light-gray text-sm italic">Cargando notificaciones…</p>
+    </section>
+  ),
+});
 
 export default function HomeDashboard({ myPendingTareas, membersWithPendingCounts, currentUserEmail }) {
   return (
     <div className="w-full max-w-5xl mx-auto px-4 pb-10 mt-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Columna 1: Tareas personales pendientes */}
         <section className="bg-ki-black border border-border-ki rounded-lg p-4">
           <h2 className="text-pearl-white font-semibold text-lg mb-4 flex items-center gap-2">
-            <CheckCircleOutlined className="text-ki-purple" />
+            <CheckCircleIcon className="h-5 w-5 text-ki-purple" />
             Mis tareas pendientes
           </h2>
           {myPendingTareas.length === 0 ? (
@@ -38,10 +49,9 @@ export default function HomeDashboard({ myPendingTareas, membersWithPendingCount
           )}
         </section>
 
-        {/* Columna 2: Panel de miembros con contadores */}
         <section className="bg-ki-black border border-border-ki rounded-lg p-4">
           <h2 className="text-pearl-white font-semibold text-lg mb-4 flex items-center gap-2">
-            <UserOutlined className="text-ki-purple" />
+            <UserIcon className="h-5 w-5 text-ki-purple" />
             Miembros · tareas pendientes
           </h2>
           {membersWithPendingCounts.length === 0 ? (
@@ -72,6 +82,8 @@ export default function HomeDashboard({ myPendingTareas, membersWithPendingCount
           )}
         </section>
       </div>
+
+      <RecentNotifications />
     </div>
   );
 }

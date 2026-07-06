@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useContext } from "react";
 import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 import { getBoardKey } from "../../utils/index";
 import { useRouter } from "next/navigation";
@@ -28,6 +28,7 @@ export default function Board({ boardId }) {
   const [viewMode, setViewMode] = useState(VIEW_MODES.BOARD);
   const [countryFilter, setCountryFilter] = useState(null);
   const router = useRouter();
+  const currentUser = useContext(UserContext);
 
   useEffect(() => {
     setLoading(true);
@@ -144,39 +145,9 @@ export default function Board({ boardId }) {
       .catch(console.error);
   };
 
-  const notifyIfFinalized = (listKey, tareaKey, tareaUpdate, prevTarea) => {
-    if (tareaUpdate.done === true && !prevTarea?.done) {
-      requestTaskCompletedNotification({
-        boardId: boardKey,
-        listId: listKey,
-        tareaId: tareaKey,
-        itemType: "tarea",
-      });
-      return;
-    }
-
-    if (!tareaUpdate.subtasks) return;
-
-    const prevMap = new Map((prevTarea?.subtasks || []).map((s) => [s.id, s]));
-    tareaUpdate.subtasks.forEach((sub) => {
-      if (sub.done && !prevMap.get(sub.id)?.done) {
-        requestTaskCompletedNotification({
-          boardId: boardKey,
-          listId: listKey,
-          tareaId: tareaKey,
-          itemType: "subtask",
-          subtaskId: sub.id,
-        });
-      }
-    });
-  };
-
   const handleEditTarea = (params) => {
     const { listKey, tareaKey, tarea } = params;
     const listIndex = tareas.findIndex((c) => c.listKey === listKey);
-    const prevTarea = listIndex !== -1
-      ? tareas[listIndex].tareas.find((c) => c.key === tareaKey)
-      : null;
 
     return db.doEditTarea(boardKey, listKey, tareaKey, tarea).then(() => {
       if (listIndex === -1) return;
@@ -192,7 +163,6 @@ export default function Board({ boardId }) {
         ...tarea,
       };
       setTareas(updatedTareas);
-      notifyIfFinalized(listKey, tareaKey, tarea, prevTarea);
     });
   };
 
@@ -206,6 +176,17 @@ export default function Board({ boardId }) {
       );
       setTareas(tareasClone);
     });
+  };
+
+  const buildMoveMeta = (oldListKey, newListKey) => {
+    if (oldListKey === newListKey) return {};
+    const fromList = lists.find((l) => l.key === oldListKey);
+    const toList = lists.find((l) => l.key === newListKey);
+    return {
+      changedBy: currentUser?.displayName || currentUser?.email || null,
+      fromListTitle: fromList?.title || "—",
+      toListTitle: toList?.title || "—",
+    };
   };
 
   const handleMoveTareaManual = (tareaKey, oldListKey, newListKey) => {
@@ -237,6 +218,7 @@ export default function Board({ boardId }) {
       oldListKey,
       newListKey,
       tareaKey,
+      ...buildMoveMeta(oldListKey, newListKey),
     });
   };
 
@@ -309,6 +291,7 @@ export default function Board({ boardId }) {
         oldListKey: droppableIdStart,
         newListKey: droppableIdEnd,
         tareaKey: draggableId,
+        ...buildMoveMeta(droppableIdStart, droppableIdEnd),
       });
       return;
     }
@@ -326,6 +309,7 @@ export default function Board({ boardId }) {
       oldListKey: droppableIdStart,
       newListKey: droppableIdEnd,
       tareaKey: draggableId,
+      ...buildMoveMeta(droppableIdStart, droppableIdEnd),
     });
   };
 
