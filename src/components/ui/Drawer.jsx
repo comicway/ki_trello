@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
-export default function Drawer({ open, onClose, width = 520, zIndex = 1200, children }) {
+export default function Drawer({
+  open,
+  onClose,
+  width = 520,
+  zIndex = 1200,
+  children,
+}) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -34,12 +40,17 @@ export default function Drawer({ open, onClose, width = 520, zIndex = 1200, chil
         onClick={onClose}
       />
       <aside
-        className="fixed top-0 right-0 flex h-full min-w-0 max-w-full flex-col overflow-x-hidden overflow-y-auto bg-[#1d2125] text-light-gray p-6 box-border relative"
-        style={{ width: Math.min(width, typeof window !== "undefined" ? window.innerWidth : width) }}
+        className="fixed top-0 right-0 flex h-full min-w-[320px] max-w-full flex-col overflow-x-hidden overflow-y-auto bg-[#1d2125] text-light-gray p-6 box-border [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        style={{
+          width:
+            typeof window !== "undefined"
+              ? Math.min(width, window.innerWidth)
+              : width,
+        }}
       >
         {children}
       </aside>
     </div>,
-    document.body
+    document.body,
   );
 }
