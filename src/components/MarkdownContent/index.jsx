@@ -7,12 +7,24 @@ import remarkGfm from "remark-gfm";
  */
 export default function MarkdownContent({ children }) {
   if (!children) return null;
+
+  const content =
+    typeof children === "string"
+      ? children.replace(
+          /@([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/g,
+          "`@mention:$1`",
+        )
+      : children;
+
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
       components={{
         p: ({ node, ...props }) => (
-          <p className="mb-2 last:mb-0 text-pearl-white text-sm leading-relaxed" {...props} />
+          <p
+            className="mb-2 last:mb-0 text-pearl-white text-sm leading-relaxed"
+            {...props}
+          />
         ),
         strong: ({ node, ...props }) => (
           <strong className="font-semibold text-pearl-white" {...props} />
@@ -30,38 +42,70 @@ export default function MarkdownContent({ children }) {
           />
         ),
         ul: ({ node, ...props }) => (
-          <ul className="list-disc list-inside mb-2 text-pearl-white text-sm space-y-1" {...props} />
+          <ul
+            className="list-disc list-inside mb-2 text-pearl-white text-sm space-y-1"
+            {...props}
+          />
         ),
         ol: ({ node, ...props }) => (
-          <ol className="list-decimal list-inside mb-2 text-pearl-white text-sm space-y-1" {...props} />
+          <ol
+            className="list-decimal list-inside mb-2 text-pearl-white text-sm space-y-1"
+            {...props}
+          />
         ),
         li: ({ node, ...props }) => (
           <li className="text-pearl-white text-sm" {...props} />
         ),
-        code: ({ node, inline, ...props }) =>
-          inline ? (
+        code: ({ node, inline, children, ...props }) => {
+          const text = String(children);
+          if (inline && text.startsWith("@mention:")) {
+            const email = text.replace("@mention:", "");
+            return (
+              <span className="border border-[#731af2] text-white px-1.5 py-0.5 rounded text-xs bg-transparent whitespace-nowrap">
+                {email}
+              </span>
+            );
+          }
+          return inline ? (
             <code
               className="bg-[#1a1d20] text-ki-pastel px-1 py-0.5 rounded text-xs font-mono"
               {...props}
-            />
+            >
+              {children}
+            </code>
           ) : (
             <pre className="bg-[#1a1d20] rounded p-3 overflow-x-auto mb-2">
-              <code className="text-ki-pastel text-xs font-mono" {...props} />
+              <code className="text-ki-pastel text-xs font-mono" {...props}>
+                {children}
+              </code>
             </pre>
-          ),
+          );
+        },
         blockquote: ({ node, ...props }) => (
           <blockquote
             className="border-l-2 border-ki-purple pl-3 italic text-light-gray mb-2"
             {...props}
           />
         ),
-        h1: ({ node, ...props }) => <h1 className="text-base font-bold text-pearl-white mb-1" {...props} />,
-        h2: ({ node, ...props }) => <h2 className="text-sm font-bold text-pearl-white mb-1" {...props} />,
-        h3: ({ node, ...props }) => <h3 className="text-sm font-semibold text-pearl-white mb-1" {...props} />,
+        h1: ({ node, ...props }) => (
+          <h1
+            className="text-base font-bold text-pearl-white mb-1"
+            {...props}
+          />
+        ),
+        h2: ({ node, ...props }) => (
+          <h2 className="text-sm font-bold text-pearl-white mb-1" {...props} />
+        ),
+        h3: ({ node, ...props }) => (
+          <h3
+            className="text-sm font-semibold text-pearl-white mb-1"
+            {...props}
+          />
+        ),
         hr: () => <hr className="border-border-ki my-3" />,
       }}
     >
-      {children}
+      {content}
     </ReactMarkdown>
   );
 }
