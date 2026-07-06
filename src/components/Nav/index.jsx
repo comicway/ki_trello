@@ -17,7 +17,7 @@ export default function Nav() {
     : null;
 
   return (
-    <nav className="flex justify-between items-center px-4 py-3 border-b border-border-ki bg-ki-black">
+    <nav className="relative flex justify-between items-center px-4 py-3 border-b border-border-ki bg-ki-black">
       <div>
         <Link
           href="/boards"
@@ -26,6 +26,14 @@ export default function Nav() {
         >
           <HomeIcon className="h-5 w-5" />
         </Link>
+      </div>
+
+      <div className="pointer-events-none absolute inset-y-0 left-1/2 flex -translate-x-1/2 items-center justify-center">
+        <img
+          src="/logo-kitechnologies-white.svg"
+          alt="Logo de Ki technologies"
+          className="h-8 w-auto max-h-8 object-contain"
+        />
       </div>
 
       {member && (
