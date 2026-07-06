@@ -93,7 +93,9 @@ export async function dispatchNotification(payload) {
   }
 
   const appUrl = trimEnv(
-    process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL,
+    process.env.NEXT_PUBLIC_APP_URL ||
+      process.env.APP_URL ||
+      "https://ki-trello.vercel.app",
   );
   const boardUrl =
     boardId && appUrl ? `${appUrl.replace(/\/$/, "")}/b/${boardId}` : "";
