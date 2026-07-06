@@ -7,6 +7,7 @@ import DoneToggle from "../DoneToggle";
 import DoneFooter from "../DoneFooter";
 import ReadyForSalesforceSwitch from "../ReadyForSalesforceSwitch";
 import MarkdownContent from "../MarkdownContent";
+import AssigneeSelect from "../ui/AssigneeSelect";
 import useResizableDrawer from "../../hooks/useResizableDrawer";
 import { UserContext } from "../../providers/UserProvider";
 import { buildDoneUpdate } from "../../utils/completion";
@@ -59,9 +60,18 @@ export default function SubtareaModal({
     }
     onUpdate(subtask.id, {
       title: updates.title !== undefined ? updates.title : title,
-      description: updates.description !== undefined ? updates.description : description,
-      dueDate: updates.dueDate !== undefined ? updates.dueDate : dueDate ? dueDate.toISOString() : null,
-      assigneeEmail: updates.assigneeEmail !== undefined ? updates.assigneeEmail : assigneeEmail,
+      description:
+        updates.description !== undefined ? updates.description : description,
+      dueDate:
+        updates.dueDate !== undefined
+          ? updates.dueDate
+          : dueDate
+            ? dueDate.toISOString()
+            : null,
+      assigneeEmail:
+        updates.assigneeEmail !== undefined
+          ? updates.assigneeEmail
+          : assigneeEmail,
       ...(updates.readyForSalesforce !== undefined
         ? { readyForSalesforce: updates.readyForSalesforce }
         : {}),
@@ -109,7 +119,12 @@ export default function SubtareaModal({
   const dateInputValue = dueDate ? moment(dueDate).format("YYYY-MM-DD") : "";
 
   return (
-    <Drawer open={visible} onClose={handleClose} width={drawerWidth} zIndex={1300}>
+    <Drawer
+      open={visible}
+      onClose={handleClose}
+      width={drawerWidth}
+      zIndex={1300}
+    >
       <div
         onMouseDown={handleResizeMouseDown}
         className="absolute left-0 top-0 bottom-0 z-20 w-1.5 shrink-0 cursor-ew-resize touch-none"
@@ -117,7 +132,10 @@ export default function SubtareaModal({
       />
 
       <div className="flex items-center gap-2 text-pearl-white mb-8">
-        <DoneToggle done={!!subtask.done} onClick={() => handleSave({ done: !subtask.done })} />
+        <DoneToggle
+          done={!!subtask.done}
+          onClick={() => handleSave({ done: !subtask.done })}
+        />
         <div className="flex-1 min-w-0">
           {editingTitle ? (
             <input
@@ -162,18 +180,11 @@ export default function SubtareaModal({
             <UserIcon className="h-4 w-4" />
             <span>Responsable</span>
           </h4>
-          <select
-            value={assigneeEmail || ""}
-            onChange={(e) => handleAssigneeChange(e.target.value || null)}
-            className={selectClass}
-          >
-            <option value="">Sin responsable asignado</option>
-            {members.map((member, i) => (
-              <option key={member.email || i} value={member.email}>
-                {member.displayName || member.email}
-              </option>
-            ))}
-          </select>
+          <AssigneeSelect
+            members={members}
+            value={assigneeEmail}
+            onChange={handleAssigneeChange}
+          />
         </div>
       )}
 
@@ -186,7 +197,8 @@ export default function SubtareaModal({
           type="date"
           value={dateInputValue}
           onChange={handleDateChange}
-          className={`${selectClass} [color-scheme:dark]`}
+          onClick={(e) => e.target.showPicker && e.target.showPicker()}
+          className={`${selectClass} [color-scheme:dark] cursor-pointer`}
         />
       </div>
 
@@ -206,7 +218,10 @@ export default function SubtareaModal({
               rows={9}
             />
             <div className="flex gap-2">
-              <button type="submit" className="px-4 py-1.5 bg-ki-purple border border-border-ki text-pearl-white rounded text-sm font-medium hover:bg-ki-pastel transition-colors cursor-pointer">
+              <button
+                type="submit"
+                className="px-4 py-1.5 bg-ki-purple border border-border-ki text-pearl-white rounded text-sm font-medium hover:bg-ki-pastel transition-colors cursor-pointer"
+              >
                 Guardar
               </button>
               <button
@@ -246,7 +261,10 @@ export default function SubtareaModal({
             }
           }}
           onDelete={(url) => {
-            const updated = description.replace(url, "").replace(/\s{2,}/g, " ").trim();
+            const updated = description
+              .replace(url, "")
+              .replace(/\s{2,}/g, " ")
+              .trim();
             setDescription(updated);
             handleSave({ description: updated });
           }}
@@ -266,7 +284,11 @@ export default function SubtareaModal({
         onChange={(next) => handleSave({ readyForSalesforce: next })}
       />
 
-      <DoneFooter doneBy={subtask.doneBy} doneAt={subtask.doneAt} label="Subtarea Finalizada" />
+      <DoneFooter
+        doneBy={subtask.doneBy}
+        doneAt={subtask.doneAt}
+        label="Subtarea Finalizada"
+      />
     </Drawer>
   );
 }
