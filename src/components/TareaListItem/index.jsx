@@ -36,6 +36,7 @@ export default function TareaListItem({
     title,
     description,
     dueDate,
+    country,
     assigneeEmail,
     subtasks,
     done,
@@ -166,6 +167,7 @@ export default function TareaListItem({
         tareaTitle={title}
         tareaDescription={description || ""}
         tareaDueDate={dueDate}
+        tareaCountry={country}
         tareaAssigneeEmail={assigneeEmail}
         tareaSubtasks={subtasks || []}
         tareaDone={!!done}

@@ -7,6 +7,7 @@ import LinkPreviewList from "../LinkPreviewList";
 import DoneToggle from "../DoneToggle";
 import DoneFooter from "../DoneFooter";
 import ReadyForSalesforceSwitch from "../ReadyForSalesforceSwitch";
+import CountrySelect from "../CountrySelect";
 import MarkdownContent from "../MarkdownContent";
 import AssigneeSelect from "../ui/AssigneeSelect";
 import useResizableDrawer from "../../hooks/useResizableDrawer";
@@ -30,6 +31,7 @@ export default function TareaModal(props) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState(null);
+  const [country, setCountry] = useState(null);
   const [assigneeEmail, setAssigneeEmail] = useState(null);
   const [subtasks, setSubtasks] = useState([]);
   const [done, setDone] = useState(false);
@@ -46,6 +48,7 @@ export default function TareaModal(props) {
     handleHideModal,
     tareaDescription,
     tareaDueDate,
+    tareaCountry,
     tareaAssigneeEmail,
     tareaSubtasks,
     tareaDone,
@@ -65,23 +68,15 @@ export default function TareaModal(props) {
     setTitle(tareaTitle);
     setDescription(tareaDescription);
     setDueDate(tareaDueDate ? moment(tareaDueDate) : null);
+    setCountry(tareaCountry || null);
     setAssigneeEmail(tareaAssigneeEmail || null);
     setSubtasks(tareaSubtasks || []);
     setDone(!!tareaDone);
     setDoneAt(tareaDoneAt || null);
     setDoneBy(tareaDoneBy || null);
     setReadyForSalesforce(!!tareaReadyForSalesforce);
-  }, [
-    tareaTitle,
-    tareaDescription,
-    tareaDueDate,
-    tareaAssigneeEmail,
-    tareaSubtasks,
-    tareaDone,
-    tareaDoneAt,
-    tareaDoneBy,
-    tareaReadyForSalesforce,
-  ]);
+    setPickerValue(panelDayjs(tareaDueDate));
+  }, [tareaTitle, tareaDescription, tareaDueDate, tareaCountry, tareaAssigneeEmail, tareaSubtasks, tareaDone, tareaDoneAt, tareaDoneBy, tareaReadyForSalesforce]);
 
   const handleSave = (updates) => {
     let newDoneAt = updates.doneAt !== undefined ? updates.doneAt : doneAt;
@@ -104,20 +99,10 @@ export default function TareaModal(props) {
 
     const updatedTarea = {
       title: updates.title !== undefined ? updates.title : title,
-      description:
-        updates.description !== undefined
-          ? updates.description
-          : description || "",
-      dueDate:
-        updates.dueDate !== undefined
-          ? updates.dueDate
-          : dueDate
-            ? dueDate.toISOString()
-            : null,
-      assigneeEmail:
-        updates.assigneeEmail !== undefined
-          ? updates.assigneeEmail
-          : assigneeEmail,
+      description: updates.description !== undefined ? updates.description : description || "",
+      dueDate: updates.dueDate !== undefined ? updates.dueDate : dueDate ? dueDate.toISOString() : null,
+      country: updates.country !== undefined ? updates.country : country,
+      assigneeEmail: updates.assigneeEmail !== undefined ? updates.assigneeEmail : assigneeEmail,
       subtasks: updates.subtasks !== undefined ? updates.subtasks : subtasks,
       done: newDone,
       doneAt: newDoneAt,
@@ -184,9 +169,13 @@ export default function TareaModal(props) {
     handleSave({ description });
   };
 
-  const handleDateChange = (e) => {
-    const val = e.target.value;
-    const next = val ? moment(val) : null;
+  const handleCountryChange = (nextCountry) => {
+    setCountry(nextCountry);
+    handleSave({ country: nextCountry });
+  };
+
+  const handleDateChange = (date) => {
+    const next = date ? moment(date.toDate()) : null;
     setDueDate(next);
     handleSave({ dueDate: val ? moment(val).toISOString() : null });
   };
@@ -315,18 +304,35 @@ export default function TareaModal(props) {
         </div>
       </div>
 
-      <div className="mb-8">
-        <h4 className="flex items-center gap-2 text-pearl-white font-semibold mb-3">
-          <CalendarIcon className="h-4 w-4" />
-          <span>Fecha de entrega</span>
-        </h4>
-        <input
-          type="date"
-          value={dateInputValue}
-          onChange={handleDateChange}
-          onClick={(e) => e.target.showPicker && e.target.showPicker()}
-          className={`${selectClass} [color-scheme:dark] cursor-pointer`}
-        />
+      {/* Due Date + Country */}
+      <div className="mb-8 flex flex-row gap-4">
+        <div className="flex-1 min-w-0">
+          <h4 className="flex items-center gap-2 text-pearl-white font-semibold mb-3">
+            <CalendarOutlined />
+            <span>Fecha de entrega</span>
+          </h4>
+          <DatePicker
+            value={toDayjs(dueDate)}
+            defaultPickerValue={panelDayjs(dueDate)}
+            pickerValue={pickerValue}
+            onPickerValueChange={setPickerValue}
+            onOpenChange={(open) => {
+              if (open) setPickerValue(panelDayjs(dueDate));
+            }}
+            onChange={handleDateChange}
+            format={customFormat}
+            placeholder="Sin fecha de entrega"
+            allowClear
+            className="w-full bg-ki-black text-pearl-white border-border-ki hover:border-ki-purple focus:border-ki-purple transition-colors h-10 px-3 cursor-pointer"
+            classNames={{ popup: { root: "dark-datepicker" } }}
+          />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h4 className="flex items-center gap-2 text-pearl-white font-semibold mb-3">
+            <span>País</span>
+          </h4>
+          <CountrySelect value={country} onChange={handleCountryChange} />
+        </div>
       </div>
 
       <div>

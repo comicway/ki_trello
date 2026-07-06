@@ -8,9 +8,11 @@ import CreateList from "../../components/CreateList";
 import Loader from "../../components/Loader";
 import BoardTitle from "../../components/BoardTitle";
 import BoardListView from "../../components/BoardListView";
+import CountryFilterButton, { viewTabButtonClass } from "../../components/CountryFilterButton";
 import { getOwnerIds } from "../../utils/boardRoles";
 import { ensureTareasForLists, getListTareasIndex } from "../../utils/tareasState";
-import { UserContext } from "../../providers/UserProvider";
+import { filterTareasByCountry } from "../../utils/tareaCountryFilter";
+import { requestTaskCompletedNotification } from "../../lib/notifications/requestTaskCompletedNotification";
 
 const VIEW_MODES = { BOARD: "board", LIST: "list" };
 
@@ -24,6 +26,7 @@ export default function Board({ boardId }) {
   const [dataFetched, setDataFetched] = useState(false);
   const [focusTareaKey, setFocusTareaKey] = useState(null);
   const [viewMode, setViewMode] = useState(VIEW_MODES.BOARD);
+  const [countryFilter, setCountryFilter] = useState(null);
   const router = useRouter();
   const currentUser = useContext(UserContext);
 
@@ -79,6 +82,11 @@ export default function Board({ boardId }) {
       cancelled = true;
     };
   }, [viewMode, boardKey, listKeysSignature]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const filteredTareas = useMemo(
+    () => filterTareasByCountry(tareas, countryFilter),
+    [tareas, countryFilter]
+  );
 
   const handleQuickAddTarea = () => {
     if (lists.length === 0) return;
@@ -333,32 +341,25 @@ export default function Board({ boardId }) {
             <button
               type="button"
               onClick={() => setViewMode(VIEW_MODES.LIST)}
-              className={`px-3 py-1 text-sm font-medium rounded transition-colors bg-transparent border-none cursor-pointer ${
-                viewMode === VIEW_MODES.LIST
-                  ? "text-ki-orange"
-                  : "text-light-gray hover:text-pearl-white"
-              }`}
+              className={viewTabButtonClass(viewMode === VIEW_MODES.LIST)}
             >
               Lista
             </button>
             <button
               type="button"
               onClick={() => setViewMode(VIEW_MODES.BOARD)}
-              className={`px-3 py-1 text-sm font-medium rounded transition-colors bg-transparent border-none cursor-pointer ${
-                viewMode === VIEW_MODES.BOARD
-                  ? "text-ki-orange"
-                  : "text-light-gray hover:text-pearl-white"
-              }`}
+              className={viewTabButtonClass(viewMode === VIEW_MODES.BOARD)}
             >
               Tablero
             </button>
+            <CountryFilterButton value={countryFilter} onChange={setCountryFilter} />
           </div>
 
           <DragDropContext onDragEnd={handleOnDragEnd} key={viewMode}>
           {viewMode === VIEW_MODES.LIST ? (
             <BoardListView
               lists={lists}
-              tareas={tareas}
+              tareas={filteredTareas}
               boardKey={boardKey}
               members={members}
               handleEditTarea={handleEditTarea}
@@ -382,7 +383,7 @@ export default function Board({ boardId }) {
                     ref={provided.innerRef}
                   >
                     {lists?.map((list, index) => {
-                      const listTareas = tareas.find(
+                      const listTareas = filteredTareas.find(
                         (c) => c.listKey === list.key
                       );
 

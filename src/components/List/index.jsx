@@ -76,6 +76,7 @@ export default function List(props) {
                           title={tarea.title}
                           description={tarea.description ? tarea.description : ""}
                           dueDate={tarea.dueDate || null}
+                          country={tarea.country || null}
                           assigneeEmail={tarea.assigneeEmail || null}
                           subtasks={tarea.subtasks || []}
                           done={tarea.done || false}

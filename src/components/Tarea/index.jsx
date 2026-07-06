@@ -19,6 +19,7 @@ export default function Tarea(props) {
     title,
     description,
     dueDate,
+    country,
     assigneeEmail,
     subtasks,
     done,
@@ -128,6 +129,7 @@ export default function Tarea(props) {
         tareaTitle={tareaTitle}
         tareaDescription={description}
         tareaDueDate={dueDate}
+        tareaCountry={country}
         tareaAssigneeEmail={assigneeEmail}
         tareaSubtasks={subtasks}
         tareaDone={!!done}
