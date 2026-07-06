@@ -8,6 +8,7 @@ import DoneToggle from "../DoneToggle";
 import DoneFooter from "../DoneFooter";
 import ReadyForSalesforceSwitch from "../ReadyForSalesforceSwitch";
 import MarkdownContent from "../MarkdownContent";
+import AssigneeSelect from "../ui/AssigneeSelect";
 import useResizableDrawer from "../../hooks/useResizableDrawer";
 import { UserContext } from "../../providers/UserProvider";
 import { buildDoneUpdate, isFinalizadoList } from "../../utils/completion";
@@ -70,7 +71,17 @@ export default function TareaModal(props) {
     setDoneAt(tareaDoneAt || null);
     setDoneBy(tareaDoneBy || null);
     setReadyForSalesforce(!!tareaReadyForSalesforce);
-  }, [tareaTitle, tareaDescription, tareaDueDate, tareaAssigneeEmail, tareaSubtasks, tareaDone, tareaDoneAt, tareaDoneBy, tareaReadyForSalesforce]);
+  }, [
+    tareaTitle,
+    tareaDescription,
+    tareaDueDate,
+    tareaAssigneeEmail,
+    tareaSubtasks,
+    tareaDone,
+    tareaDoneAt,
+    tareaDoneBy,
+    tareaReadyForSalesforce,
+  ]);
 
   const handleSave = (updates) => {
     let newDoneAt = updates.doneAt !== undefined ? updates.doneAt : doneAt;
@@ -93,15 +104,28 @@ export default function TareaModal(props) {
 
     const updatedTarea = {
       title: updates.title !== undefined ? updates.title : title,
-      description: updates.description !== undefined ? updates.description : description || "",
-      dueDate: updates.dueDate !== undefined ? updates.dueDate : dueDate ? dueDate.toISOString() : null,
-      assigneeEmail: updates.assigneeEmail !== undefined ? updates.assigneeEmail : assigneeEmail,
+      description:
+        updates.description !== undefined
+          ? updates.description
+          : description || "",
+      dueDate:
+        updates.dueDate !== undefined
+          ? updates.dueDate
+          : dueDate
+            ? dueDate.toISOString()
+            : null,
+      assigneeEmail:
+        updates.assigneeEmail !== undefined
+          ? updates.assigneeEmail
+          : assigneeEmail,
       subtasks: updates.subtasks !== undefined ? updates.subtasks : subtasks,
       done: newDone,
       doneAt: newDoneAt,
       doneBy: newDoneBy,
       readyForSalesforce:
-        updates.readyForSalesforce !== undefined ? updates.readyForSalesforce : readyForSalesforce,
+        updates.readyForSalesforce !== undefined
+          ? updates.readyForSalesforce
+          : readyForSalesforce,
       lastEditedBy: currentUser?.displayName || currentUser?.email || null,
       lastEditedByEmail: currentUser?.email || null,
     };
@@ -110,7 +134,7 @@ export default function TareaModal(props) {
 
   const handleSubtaskUpdate = (subtaskId, updates) => {
     const updated = subtasks.map((s) =>
-      s.id === subtaskId ? { ...s, ...updates } : s
+      s.id === subtaskId ? { ...s, ...updates } : s,
     );
     setSubtasks(updated);
     handleSave({ subtasks: updated });
@@ -264,18 +288,11 @@ export default function TareaModal(props) {
               <UserIcon className="h-4 w-4" />
               <span>Responsable</span>
             </h4>
-            <select
-              value={assigneeEmail || ""}
-              onChange={(e) => handleAssigneeChange(e.target.value || null)}
-              className={selectClass}
-            >
-              <option value="">Sin responsable asignado</option>
-              {members.map((member, i) => (
-                <option key={member.email || i} value={member.email}>
-                  {member.displayName || member.email}
-                </option>
-              ))}
-            </select>
+            <AssigneeSelect
+              members={members}
+              value={assigneeEmail}
+              onChange={handleAssigneeChange}
+            />
           </div>
         )}
 
@@ -284,7 +301,11 @@ export default function TareaModal(props) {
             <SwapIcon className="h-4 w-4" />
             <span>Estado</span>
           </h4>
-          <select value={listKey} onChange={(e) => handleStatusChange(e.target.value)} className={selectClass}>
+          <select
+            value={listKey}
+            onChange={(e) => handleStatusChange(e.target.value)}
+            className={selectClass}
+          >
             {lists?.map((list) => (
               <option key={list.key} value={list.key}>
                 {list.title}
@@ -303,7 +324,8 @@ export default function TareaModal(props) {
           type="date"
           value={dateInputValue}
           onChange={handleDateChange}
-          className={`${selectClass} [color-scheme:dark]`}
+          onClick={(e) => e.target.showPicker && e.target.showPicker()}
+          className={`${selectClass} [color-scheme:dark] cursor-pointer`}
         />
       </div>
 
@@ -324,7 +346,10 @@ export default function TareaModal(props) {
                 rows={9}
               />
               <div className="flex gap-2">
-                <button type="submit" className="px-4 py-1.5 bg-ki-purple border border-border-ki text-pearl-white rounded text-sm font-medium hover:bg-ki-pastel transition-colors cursor-pointer">
+                <button
+                  type="submit"
+                  className="px-4 py-1.5 bg-ki-purple border border-border-ki text-pearl-white rounded text-sm font-medium hover:bg-ki-pastel transition-colors cursor-pointer"
+                >
                   Guardar
                 </button>
                 <button
@@ -364,7 +389,10 @@ export default function TareaModal(props) {
               }
             }}
             onDelete={(url) => {
-              const updated = description.replace(url, "").replace(/\s{2,}/g, " ").trim();
+              const updated = description
+                .replace(url, "")
+                .replace(/\s{2,}/g, " ")
+                .trim();
               setDescription(updated);
               handleSave({ description: updated });
             }}
@@ -401,7 +429,12 @@ export default function TareaModal(props) {
         </button>
       </div>
 
-      <Comments boardKey={boardKey} listKey={listKey} tareaKey={tareaKey} members={members} />
+      <Comments
+        boardKey={boardKey}
+        listKey={listKey}
+        tareaKey={tareaKey}
+        members={members}
+      />
 
       <ReadyForSalesforceSwitch
         value={readyForSalesforce}
