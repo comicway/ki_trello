@@ -75,7 +75,6 @@ export default function TareaModal(props) {
     setDoneAt(tareaDoneAt || null);
     setDoneBy(tareaDoneBy || null);
     setReadyForSalesforce(!!tareaReadyForSalesforce);
-    setPickerValue(panelDayjs(tareaDueDate));
   }, [tareaTitle, tareaDescription, tareaDueDate, tareaCountry, tareaAssigneeEmail, tareaSubtasks, tareaDone, tareaDoneAt, tareaDoneBy, tareaReadyForSalesforce]);
 
   const handleSave = (updates) => {
@@ -174,9 +173,9 @@ export default function TareaModal(props) {
     handleSave({ country: nextCountry });
   };
 
-  const handleDateChange = (date) => {
-    const next = date ? moment(date.toDate()) : null;
-    setDueDate(next);
+  const handleDateChange = (e) => {
+    const val = e.target.value;
+    setDueDate(val ? moment(val) : null);
     handleSave({ dueDate: val ? moment(val).toISOString() : null });
   };
 
@@ -308,23 +307,15 @@ export default function TareaModal(props) {
       <div className="mb-8 flex flex-row gap-4">
         <div className="flex-1 min-w-0">
           <h4 className="flex items-center gap-2 text-pearl-white font-semibold mb-3">
-            <CalendarOutlined />
+            <CalendarIcon className="h-4 w-4" />
             <span>Fecha de entrega</span>
           </h4>
-          <DatePicker
-            value={toDayjs(dueDate)}
-            defaultPickerValue={panelDayjs(dueDate)}
-            pickerValue={pickerValue}
-            onPickerValueChange={setPickerValue}
-            onOpenChange={(open) => {
-              if (open) setPickerValue(panelDayjs(dueDate));
-            }}
+          <input
+            type="date"
+            value={dateInputValue}
             onChange={handleDateChange}
-            format={customFormat}
-            placeholder="Sin fecha de entrega"
-            allowClear
-            className="w-full bg-ki-black text-pearl-white border-border-ki hover:border-ki-purple focus:border-ki-purple transition-colors h-10 px-3 cursor-pointer"
-            classNames={{ popup: { root: "dark-datepicker" } }}
+            onClick={(e) => e.target.showPicker && e.target.showPicker()}
+            className={`${selectClass} [color-scheme:dark] cursor-pointer`}
           />
         </div>
         <div className="flex-1 min-w-0">
