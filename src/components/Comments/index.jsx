@@ -178,14 +178,12 @@ function MentionTextarea({ value, onChange, onSubmit, members, placeholder }) {
   };
 
   const selectMention = (member) => {
-    // Al seleccionar el usuario, se inserta su correo en lugar del nombre
-    // para cumplir con las nuevas reglas de validación estricta de formato email.
-    const identifier = member.email || member.displayName;
+    const name = member.displayName || member.email;
     const el = textareaRef.current;
     const { newValue, newCursor } = insertMention(
       value,
       el.selectionStart,
-      identifier,
+      name,
     );
     onChange(newValue);
     setMentionQuery(null);
