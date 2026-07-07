@@ -17,10 +17,13 @@ const wasTareaJustCompleted = (before, after) => !before?.done && !!after?.done;
 
 const findNewlyCompletedSubtasks = (before, after) => {
   const beforeMap = new Map((before?.subtasks || []).map((s) => [s.id, s]));
-  return (after?.subtasks || []).filter((s) => s.done && !beforeMap.get(s.id)?.done);
+  return (after?.subtasks || []).filter(
+    (s) => s.done && !beforeMap.get(s.id)?.done,
+  );
 };
 
-const actorFrom = (after) => after?.lastEditedBy || after?.doneBy || "Un miembro";
+const actorFrom = (after) =>
+  after?.lastEditedBy || after?.doneBy || "Un miembro";
 
 const buildTareaEvents = (before, after, context) => {
   if (!after) return [];
@@ -126,7 +129,11 @@ const buildTareaEvents = (before, after, context) => {
   }
 
   if (before?.description !== after.description) {
-    extractNewMentionTargets(before?.description, after.description, members).forEach((target) => {
+    extractNewMentionTargets(
+      before?.description,
+      after.description,
+      members,
+    ).forEach((target) => {
       events.push({
         eventType: EVENT_TYPES.MENTION,
         idempotencyKey: `mention:description:${context.tareaId}:${target.email}:${after.description?.length || 0}`,
@@ -144,14 +151,24 @@ const buildTareaEvents = (before, after, context) => {
     });
   }
 
-  return events;
+  const allowedEvents = new Set([
+    EVENT_TYPES.SALESFORCE_READY,
+    EVENT_TYPES.TASK_COMPLETED,
+    EVENT_TYPES.SUBTASK_COMPLETED,
+    EVENT_TYPES.MENTION,
+  ]);
+
+  return events.filter((e) => allowedEvents.has(e.eventType));
 };
 
 const buildCommentEvents = (comment, context) => {
   const hasMentions = (comment?.mentionedEmails || []).length > 0;
   if (!comment?.text && !hasMentions) return [];
 
-  const targets = extractMentionTargetsFromComment(comment, context.members || []);
+  const targets = extractMentionTargetsFromComment(
+    comment,
+    context.members || [],
+  );
   const storedEmails = (comment?.mentionedEmails || []).filter(Boolean);
   const parsedTargetEmails = [
     ...new Set([
