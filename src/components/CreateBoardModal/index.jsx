@@ -15,17 +15,17 @@ export default function CreateBoardModal(props) {
   };
 
   return (
-    <Modal open={visible} onClose={onCloseModal} title={<span className="font-semibold text-lg">Create board</span>} width="320px">
+    <Modal open={visible} onClose={onCloseModal} title={<span className="font-semibold text-lg">Crear tablero</span>} width="320px">
       <form onSubmit={handleCreateBoard} className="space-y-4">
         <input
           className={inputClass}
-          placeholder="Add board title"
+          placeholder="Titulo del tablero"
           onChange={(e) => setBoardTitle(e.target.value)}
           value={boardTitle}
           autoFocus
         />
         <button type="submit" disabled={boardTitle === ""} className={btnPrimary}>
-          Create
+          Crear
         </button>
       </form>
     </Modal>
