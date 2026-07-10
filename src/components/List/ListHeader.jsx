@@ -37,7 +37,7 @@ export default function ListHeader(props) {
   const listMenuItems = [
     {
       key: "delete",
-      label: "Delete this list",
+      label: "Borrar lista",
       className: "hover:bg-alert-danger hover:text-pearl-white",
       onClick: () => handleDeleteList(listKey),
     },

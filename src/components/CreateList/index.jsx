@@ -26,7 +26,7 @@ export default function CreateList({ handleCreateList, vertical = false }) {
       {editing ? (
         <form onBlur={() => setEditing(false)} onSubmit={handleSubmitForm}>
           <input
-            placeholder="Create a new list..."
+            placeholder="Nombre de la lista..."
             value={listTitle}
             onChange={(e) => setListTitle(e.target.value)}
             autoFocus
@@ -35,7 +35,7 @@ export default function CreateList({ handleCreateList, vertical = false }) {
         </form>
       ) : (
         <button type="button" className={buttonClass} onClick={() => setEditing(true)}>
-          + Add another list
+          + Añadir lista
         </button>
       )}
     </div>

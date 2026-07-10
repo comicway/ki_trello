@@ -74,13 +74,13 @@ function Boards() {
             {boards.map((board) => (
               <div key={board.key}>
                 <Link href={`/b/${board.key}`} className="w-full mb-6 md:m-0 block">
-                  <span className="flex h-[120px] w-full md:h-[188px] md:w-[280px] px-4 py-3 items-center justify-center bg-dark-blue rounded-md text-base text-pearl-white font-medium border border-border-ki hover:bg-ki-black hover:text-ki-orange transition-colors">
+                  <div className="flex h-[120px] w-full md:h-[188px] px-4 py-3 items-center justify-center bg-dark-blue rounded-md text-base text-pearl-white font-medium border border-border-ki hover:bg-ki-black hover:text-ki-orange transition-colors">
                     <span className="block break-words hyphens-auto text-center">{board.title}</span>
-                  </span>
+                  </div>
                 </Link>
               </div>
             ))}
-            <div className="w-full md:w-[280px] md:h-[188px]">
+            <div className="w-full md:h-[188px]">
               <CreateBoardTarea onClick={() => setModalOpen(true)} />
             </div>
           </div>

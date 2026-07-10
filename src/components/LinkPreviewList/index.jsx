@@ -33,7 +33,7 @@ export default function LinkPreviewList({ text, onEdit, onDelete }) {
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="flex-1 text-ki-purple text-sm truncate hover:text-ki-pastel transition-colors no-underline"
+              className="flex-1 text-ki-pink text-sm truncate hover:text-ki-orange transition-colors no-underline"
             >
               {hostname}
             </a>
