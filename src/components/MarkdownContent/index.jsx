@@ -37,7 +37,7 @@ export default function MarkdownContent({ children }) {
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-ki-purple underline hover:text-ki-pastel transition-colors break-all"
+            className="text-ki-pastel underline hover:text-ki-orange transition-colors break-all"
             {...props}
           />
         ),

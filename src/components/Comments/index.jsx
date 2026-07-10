@@ -74,7 +74,7 @@ function LinkPreview({ url, onEdit, onDelete }) {
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex-1 text-ki-purple underline hover:text-ki-pastel transition-colors truncate"
+        className="flex-1 text-ki-pink no-underline hover:text-ki-pastel transition-colors truncate"
         onClick={(e) => e.stopPropagation()}
       >
         {hostname}

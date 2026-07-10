@@ -16,11 +16,11 @@ const RecentNotifications = dynamic(() => import("../RecentNotifications"), {
 
 export default function HomeDashboard({ myPendingTareas, membersWithPendingCounts, currentUserEmail }) {
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 pb-10 mt-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="w-full max-w-5xl mx-auto pb-10 mt-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <section className="bg-ki-black border border-border-ki rounded-lg p-4">
           <h2 className="text-pearl-white font-semibold text-lg mb-4 flex items-center gap-2">
-            <CheckCircleIcon className="h-5 w-5 text-ki-purple" />
+            <CheckCircleIcon className="h-5 w-5 text-ki-orange" />
             Mis tareas pendientes
           </h2>
           {myPendingTareas.length === 0 ? (
@@ -51,7 +51,7 @@ export default function HomeDashboard({ myPendingTareas, membersWithPendingCount
 
         <section className="bg-ki-black border border-border-ki rounded-lg p-4">
           <h2 className="text-pearl-white font-semibold text-lg mb-4 flex items-center gap-2">
-            <UserIcon className="h-5 w-5 text-ki-purple" />
+            <UserIcon className="h-5 w-5 text-ki-orange" />
             Miembros · tareas pendientes
           </h2>
           {membersWithPendingCounts.length === 0 ? (

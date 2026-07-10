@@ -72,7 +72,7 @@ export default function RecentNotifications() {
   return (
     <section className="bg-ki-black border border-border-ki rounded-lg p-4 mt-6">
       <h2 className="text-pearl-white font-semibold text-lg mb-4 flex items-center gap-2">
-        <BellIcon className="h-5 w-5 text-ki-purple shrink-0" />
+        <BellIcon className="h-5 w-5 text-ki-orange shrink-0" />
         Últimas notificaciones
       </h2>
 
