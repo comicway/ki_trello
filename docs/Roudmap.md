@@ -1,4 +1,4 @@
-## Pendiente por realizar
+## opePendiente por realizar
 
 - [x] Pasar el estilo a Tailwind CSS
 - [x] Reemplaza autentificacion a Firebase Auth (iniciar sesion con correo de Google)
@@ -10,8 +10,8 @@
 - [x] Llevar la vista de bords parecida al asana
 - [x] Asignar duenos a miembros
 - [x] Actulizar vista de cuenta de usuario
-- [ ] Temas de las notificaciones por correo
-- [ ] Mejorar el Home, hacerlo practico enfocado a las necesidades del equipo CRM
+- [x] Temas de las notificaciones por correo
+- [x] Mejorar el Home, hacerlo practico enfocado a las necesidades del equipo CRM
 - [ ] Dashboard para ver las analiticas de las tareas
 - [ ] Realizar un QA manual de los estilos general
 
